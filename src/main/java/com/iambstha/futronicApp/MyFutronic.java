@@ -1,7 +1,12 @@
 package com.iambstha.futronicApp;
 
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 
+import javax.imageio.ImageIO;
+
+import com.futronic.SDKHelper.EnrollmentState;
 import com.futronic.SDKHelper.FTR_PROGRESS;
 import com.futronic.SDKHelper.FutronicException;
 import com.futronic.SDKHelper.FutronicIdentification;
@@ -61,6 +66,14 @@ public class MyFutronic extends FutronicSdkBase
 	@Override
 	public void UpdateScreenImage(BufferedImage Progress) {
 		System.out.println("Update Screen Image: " + Progress);
+		
+	    String imagePath = "C:\\Users\\iambstha\\OneDrive\\Desktop\\image\\image.png";
+	    try {
+	        ImageIO.write(Progress, "png", new File(imagePath));
+	        System.out.println("Image saved to: " + imagePath);
+	    } catch (IOException e) {
+	        e.printStackTrace();
+	    }
 	}
 
 	@Override
@@ -81,6 +94,7 @@ public class MyFutronic extends FutronicSdkBase
 			if (futronicIdentification instanceof FutronicIdentification) {
 				FutronicIdentification identification = (FutronicIdentification) futronicIdentification;
 				identification.GetBaseTemplate(this);
+				m_State = EnrollmentState.process_in_progress;
 			} else {
 				throw new FutronicException(nResult, "Invalid operation type");
 			}
