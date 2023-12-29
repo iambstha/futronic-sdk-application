@@ -3,6 +3,8 @@ package com.iambstha.futronicApp;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import javax.imageio.ImageIO;
 
@@ -67,7 +69,11 @@ public class MyFutronic extends FutronicSdkBase
 	public void UpdateScreenImage(BufferedImage Progress) {
 		System.out.println("Update Screen Image: " + Progress);
 		
-	    String imagePath = "C:\\Users\\iambstha\\OneDrive\\Desktop\\image\\image.png";
+	    String directoryPath = "C:\\Users\\iambstha\\OneDrive\\Desktop\\image\\";
+	    String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+	    String fileName = "image_" + timestamp + ".png";
+	    String imagePath = directoryPath + fileName;
+	    
 	    try {
 	        ImageIO.write(Progress, "png", new File(imagePath));
 	        System.out.println("Image saved to: " + imagePath);
