@@ -19,7 +19,7 @@ public class GuiController extends FutronicSdkBase {
 		try {
 			MyFutronic myFutronic = new MyFutronic();
 			myFutronic.OnGetBaseTemplateComplete(true, 0);
-			myFutronic.startSensor();
+//			myFutronic.startSensor();
 		} catch (FutronicException e) {
 			e.printStackTrace();
 		}
