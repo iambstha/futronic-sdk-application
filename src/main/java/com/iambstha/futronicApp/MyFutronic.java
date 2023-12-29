@@ -10,6 +10,7 @@ import javax.imageio.ImageIO;
 
 import com.futronic.SDKHelper.EnrollmentState;
 import com.futronic.SDKHelper.FTR_PROGRESS;
+import com.futronic.SDKHelper.FarnValues;
 import com.futronic.SDKHelper.FutronicException;
 import com.futronic.SDKHelper.FutronicIdentification;
 import com.futronic.SDKHelper.FutronicSdkBase;
@@ -24,29 +25,11 @@ public class MyFutronic extends FutronicSdkBase
 
 	public MyFutronic() throws FutronicException {
 		super();
+		
 		futronicIdentification = new FutronicIdentification();
 		futronicIdentification.setFakeDetection(true);
-	}
-
-	public void startSensor() {
-		int result = FutronicInitialize();
-
-		System.out.println(result);
-
-		if (result != FutronicSdkBase.RETCODE_OK) {
-			setupFutronicIdentification();
-		} else {
-			System.out.println("Not connected");
-		}
-	}
-
-	private void setupFutronicIdentification() {
-		try {
-			futronicIdentification = new FutronicIdentification();
-			futronicIdentification.setFFDControl(true);
-		} catch (FutronicException e) {
-			e.printStackTrace();
-		}
+		futronicIdentification.setFARnLevel(FarnValues.farn_high);
+		
 	}
 
 	@Override
@@ -67,19 +50,20 @@ public class MyFutronic extends FutronicSdkBase
 
 	@Override
 	public void UpdateScreenImage(BufferedImage Progress) {
-		System.out.println("Update Screen Image: " + Progress);
 		
-	    String directoryPath = "C:\\Users\\iambstha\\OneDrive\\Desktop\\image\\";
-	    String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-	    String fileName = "image_" + timestamp + ".png";
-	    String imagePath = directoryPath + fileName;
-	    
-	    try {
-	        ImageIO.write(Progress, "png", new File(imagePath));
-	        System.out.println("Image saved to: " + imagePath);
-	    } catch (IOException e) {
-	        e.printStackTrace();
-	    }
+		String directoryPath = "C:\\Users\\iambstha\\OneDrive\\Desktop\\image\\";
+		String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+		String fileName = "image_" + timestamp + ".png";
+		String imagePath = directoryPath + fileName;
+		
+		System.out.println("Image Clicked. Saving in progress: ");
+
+		try {
+			ImageIO.write(Progress, "png", new File(imagePath));
+			System.out.println("Image saved to: " + imagePath);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override

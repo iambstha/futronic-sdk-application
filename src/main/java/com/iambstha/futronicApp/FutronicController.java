@@ -7,9 +7,9 @@ import com.futronic.SDKHelper.FutronicException;
 import com.futronic.SDKHelper.FutronicSdkBase;
 
 @RestController
-public class GuiController extends FutronicSdkBase {
+public class FutronicController extends FutronicSdkBase {
 
-	public GuiController() throws FutronicException {
+	public FutronicController() throws FutronicException {
 		super();
 	}
 
@@ -19,13 +19,11 @@ public class GuiController extends FutronicSdkBase {
 		try {
 			MyFutronic myFutronic = new MyFutronic();
 			myFutronic.OnGetBaseTemplateComplete(true, 0);
-//			myFutronic.startSensor();
 		} catch (FutronicException e) {
 			e.printStackTrace();
 		}
-		
 
-		return "GUI initialized successfully!";
+		return "Futronic initialized successfully!";
 	}
 
 }
