@@ -18,7 +18,7 @@ public class FutronicController extends FutronicSdkBase {
 		
 		try {
 			MyFutronic myFutronic = new MyFutronic();
-			myFutronic.OnGetBaseTemplateComplete(true, 0);
+			myFutronic.OnGetBaseTemplateComplete(true, 2);
 		} catch (FutronicException e) {
 			e.printStackTrace();
 		}

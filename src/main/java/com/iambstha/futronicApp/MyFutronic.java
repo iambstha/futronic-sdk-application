@@ -11,6 +11,7 @@ import javax.imageio.ImageIO;
 import com.futronic.SDKHelper.EnrollmentState;
 import com.futronic.SDKHelper.FTR_PROGRESS;
 import com.futronic.SDKHelper.FarnValues;
+import com.futronic.SDKHelper.FutronicEnrollment;
 import com.futronic.SDKHelper.FutronicException;
 import com.futronic.SDKHelper.FutronicIdentification;
 import com.futronic.SDKHelper.FutronicSdkBase;
@@ -22,6 +23,7 @@ public class MyFutronic extends FutronicSdkBase
 		implements IIdentificationCallBack, IEnrollmentCallBack, IVerificationCallBack {
 
 	private FutronicIdentification futronicIdentification;
+	private FutronicEnrollment futronicEnrollment;
 
 	public MyFutronic() throws FutronicException {
 		super();
@@ -29,6 +31,9 @@ public class MyFutronic extends FutronicSdkBase
 		futronicIdentification = new FutronicIdentification();
 		futronicIdentification.setFakeDetection(true);
 		futronicIdentification.setFARnLevel(FarnValues.farn_high);
+		
+		futronicEnrollment = new FutronicEnrollment();
+		
 		
 	}
 
