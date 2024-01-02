@@ -1,6 +1,7 @@
 package com.iambstha.futronicApp;
 
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -15,26 +16,32 @@ import com.futronic.SDKHelper.FutronicEnrollment;
 import com.futronic.SDKHelper.FutronicException;
 import com.futronic.SDKHelper.FutronicIdentification;
 import com.futronic.SDKHelper.FutronicSdkBase;
+import com.futronic.SDKHelper.FutronicVerification;
 import com.futronic.SDKHelper.IEnrollmentCallBack;
 import com.futronic.SDKHelper.IIdentificationCallBack;
 import com.futronic.SDKHelper.IVerificationCallBack;
 
-public class MyFutronic extends FutronicSdkBase
+public class StartMyFutronic extends FutronicSdkBase
 		implements IIdentificationCallBack, IEnrollmentCallBack, IVerificationCallBack {
 
 	private FutronicIdentification futronicIdentification;
 	private FutronicEnrollment futronicEnrollment;
 
-	public MyFutronic() throws FutronicException {
+	private FutronicVerification futronicVerification;
+
+	private FutronicSdkBase m_operation;
+
+	private FutronicSdkBase m_verify;
+
+	public StartMyFutronic() throws FutronicException {
 		super();
-		
+
 		futronicIdentification = new FutronicIdentification();
 		futronicIdentification.setFakeDetection(true);
 		futronicIdentification.setFARnLevel(FarnValues.farn_high);
-		
-		futronicEnrollment = new FutronicEnrollment();
-		
-		
+
+		m_operation = new FutronicEnrollment();
+
 	}
 
 	@Override
@@ -55,17 +62,43 @@ public class MyFutronic extends FutronicSdkBase
 
 	@Override
 	public void UpdateScreenImage(BufferedImage Progress) {
-		
 		String directoryPath = "C:\\Users\\iambstha\\OneDrive\\Desktop\\image\\";
 		String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
 		String fileName = "image_" + timestamp + ".png";
 		String imagePath = directoryPath + fileName;
-		
+
 		System.out.println("Image Clicked. Saving in progress: ");
 
 		try {
 			ImageIO.write(Progress, "png", new File(imagePath));
 			System.out.println("Image saved to: " + imagePath);
+
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			ImageIO.write(Progress, "png", baos);
+			byte[] imageData = baos.toByteArray();
+
+			DbRecord dbRecord = new DbRecord();
+			dbRecord.setUserName(fileName);
+			dbRecord.setTemplate(imageData);
+
+			FutronicEnrollment enrollment;
+			try {
+				enrollment = new FutronicEnrollment();
+				enrollment.setFakeDetection(true);
+				enrollment.setFARN(m_FARN);
+				enrollment.setFastMode(true);
+				enrollment.setVersion(getVersion());
+				enrollment.setFARnLevel(m_FarnLevel);
+
+				enrollment.Enrollment(this);
+			} catch (FutronicException e) {
+				e.printStackTrace();
+			}
+
+			System.out.println("User Name: " + dbRecord.getUserName());
+
+			m_State = EnrollmentState.ready_to_process;
+
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -77,8 +110,12 @@ public class MyFutronic extends FutronicSdkBase
 	}
 
 	@Override
-	public void OnEnrollmentComplete(boolean arg0, int arg1) {
-		System.out.println("Enrollment is complete: " + arg0 + " with id" + arg1);
+	public void OnEnrollmentComplete(boolean success, int id) {
+		System.out.println("Enrollment State: " + success + " with id: " + id);
+		if (!success) {
+			System.out.println("Enrollment failed. Check for exceptions.");
+		}
+		m_State = EnrollmentState.ready_to_process;
 	}
 
 	@Override
