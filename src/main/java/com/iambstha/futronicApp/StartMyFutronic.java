@@ -25,13 +25,8 @@ public class StartMyFutronic extends FutronicSdkBase
 		implements IIdentificationCallBack, IEnrollmentCallBack, IVerificationCallBack {
 
 	private FutronicIdentification futronicIdentification;
-	private FutronicEnrollment futronicEnrollment;
 
 	private FutronicVerification futronicVerification;
-
-	private FutronicSdkBase m_operation;
-
-	private FutronicSdkBase m_verify;
 
 	public StartMyFutronic() throws FutronicException {
 		super();
@@ -39,10 +34,66 @@ public class StartMyFutronic extends FutronicSdkBase
 		futronicIdentification = new FutronicIdentification();
 		futronicIdentification.setFakeDetection(true);
 		futronicIdentification.setFARnLevel(FarnValues.farn_high);
-
-		m_operation = new FutronicEnrollment();
-
+		
 	}
+	
+    public void performEnrollmentAndVerification() {
+        try {
+            DbRecord dbRecord = performEnrollment();
+            if (dbRecord != null) {
+                performVerification(dbRecord);
+            }
+        } catch (FutronicException | IOException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private DbRecord performEnrollment() throws FutronicException, IOException {
+        System.out.println("Inside Enrollment");
+        FutronicEnrollment enrollment = new FutronicEnrollment();
+        enrollment.setFakeDetection(true);
+        enrollment.setFARN(m_FARN);
+        enrollment.setFastMode(true);
+        enrollment.setVersion(getVersion());
+        enrollment.setFARnLevel(m_FarnLevel);
+        enrollment.setMaxModels(2);
+
+        DbRecord dbRecord = new DbRecord();
+        dbRecord.setUserName(generateFileName());
+        enrollment.Enrollment(this);
+        
+        dbRecord.setTemplate(enrollment.getTemplate());
+        
+        System.out.println(dbRecord.getTemplate());
+
+        System.out.println("User Name: " + dbRecord.getUserName());
+        return dbRecord;
+    }
+    
+    private void performVerification(DbRecord dbRecord) throws FutronicException {
+        System.out.println("Inside Verification");
+        byte[] templateData = dbRecord.getTemplate();
+        if (templateData == null) {
+            System.out.println("Error: Template data is null");
+            return;
+        }
+        try {
+            FutronicVerification verification = new FutronicVerification(templateData);
+            verification.Verification(this);
+            verification.run();
+            System.out.println("Verification result: " + verification.getResult());
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    private String generateFileName() {
+        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        return "image_" + timestamp + ".png";
+    }
 
 	@Override
 	public boolean OnFakeSource(FTR_PROGRESS Progress) {
@@ -62,51 +113,34 @@ public class StartMyFutronic extends FutronicSdkBase
 
 	@Override
 	public void UpdateScreenImage(BufferedImage Progress) {
-		String directoryPath = "C:\\Users\\iambstha\\OneDrive\\Desktop\\image\\";
-		String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-		String fileName = "image_" + timestamp + ".png";
-		String imagePath = directoryPath + fileName;
+	    String directoryPath = "C:\\Users\\iambstha\\OneDrive\\Desktop\\image\\";
+	    String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+	    String fileName = "image_" + timestamp + ".png";
+	    String imagePath = directoryPath + fileName;
 
-		System.out.println("Image Clicked. Saving in progress: ");
+	    System.out.println("Image Clicked. Saving in progress: ");
 
-		try {
-			ImageIO.write(Progress, "png", new File(imagePath));
-			System.out.println("Image saved to: " + imagePath);
+	    try {
+	        ImageIO.write(Progress, "png", new File(imagePath));
+	        System.out.println("Image saved to: " + imagePath);
 
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			ImageIO.write(Progress, "png", baos);
-			byte[] imageData = baos.toByteArray();
+	        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+	        ImageIO.write(Progress, "png", baos);
+	        byte[] imageData = baos.toByteArray();
 
-			DbRecord dbRecord = new DbRecord();
-			dbRecord.setUserName(fileName);
-			dbRecord.setTemplate(imageData);
+	        performEnrollmentAndVerification();
+	        
+	        m_State = EnrollmentState.ready_to_process;
 
-			FutronicEnrollment enrollment;
-			try {
-				enrollment = new FutronicEnrollment();
-				enrollment.setFakeDetection(true);
-				enrollment.setFARN(m_FARN);
-				enrollment.setFastMode(true);
-				enrollment.setVersion(getVersion());
-				enrollment.setFARnLevel(m_FarnLevel);
-
-				enrollment.Enrollment(this);
-			} catch (FutronicException e) {
-				e.printStackTrace();
-			}
-
-			System.out.println("User Name: " + dbRecord.getUserName());
-
-			m_State = EnrollmentState.ready_to_process;
-
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+	    } catch (IOException e) {
+	        e.printStackTrace();
+	    }
 	}
+
 
 	@Override
 	public void OnVerificationComplete(boolean arg0, int arg1, boolean arg2) {
-		System.out.println("Verification is complete: " + arg0);
+		System.out.println("Verification is complete: " + arg0 + arg1 + arg2);
 	}
 
 	@Override
@@ -116,17 +150,17 @@ public class StartMyFutronic extends FutronicSdkBase
 			System.out.println("Enrollment failed. Check for exceptions.");
 		}
 		m_State = EnrollmentState.ready_to_process;
+		
 	}
 
 	@Override
 	public void OnGetBaseTemplateComplete(boolean bSuccess, int nResult) {
 		System.out.println("Inside base template");
-
 		try {
 			if (futronicIdentification instanceof FutronicIdentification) {
 				FutronicIdentification identification = (FutronicIdentification) futronicIdentification;
 				identification.GetBaseTemplate(this);
-				m_State = EnrollmentState.process_in_progress;
+				m_State = EnrollmentState.ready_to_process;
 			} else {
 				throw new FutronicException(nResult, "Invalid operation type");
 			}
@@ -134,6 +168,5 @@ public class StartMyFutronic extends FutronicSdkBase
 			futronicIdentification = null;
 			e.printStackTrace();
 		}
-
 	}
 }

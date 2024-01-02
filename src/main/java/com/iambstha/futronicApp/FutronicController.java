@@ -18,13 +18,29 @@ public class FutronicController extends FutronicSdkBase {
 		
 		try {
 			StartMyFutronic startMyFutronic = new StartMyFutronic();
-			startMyFutronic.OnGetBaseTemplateComplete(true, 0);
+			startMyFutronic.OnGetBaseTemplateComplete(true, 4);
 			
 		} catch (FutronicException e) {
 			e.printStackTrace();
 		}
 
 		return "Futronic initialized successfully!";
+	}
+	
+
+	@GetMapping("/enroll")
+	public String enrollFtr() {
+		
+		
+		try {
+			EnrollmentManager enrollmentManager = new EnrollmentManager();
+			enrollmentManager.OnGetBaseTemplateComplete(true, 0);
+			
+		} catch (FutronicException e) {
+			e.printStackTrace();
+		}
+
+		return "Futronic enrollment initialized successfully!";
 	}
 
 }
