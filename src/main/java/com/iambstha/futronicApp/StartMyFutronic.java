@@ -27,6 +27,8 @@ public class StartMyFutronic extends FutronicSdkBase
 	private FutronicIdentification futronicIdentification;
 
 	private FutronicVerification futronicVerification;
+	
+	private boolean isEnrollmentComplete = false;
 
 	public StartMyFutronic() throws FutronicException {
 		super();
@@ -63,6 +65,18 @@ public class StartMyFutronic extends FutronicSdkBase
         DbRecord dbRecord = new DbRecord();
         dbRecord.setUserName(generateFileName());
         enrollment.Enrollment(this);
+        
+        // Wait for the enrollment to complete
+        synchronized (enrollment) {
+            try {
+                enrollment.wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // Set the flag to indicate enrollment is complete
+        isEnrollmentComplete = true;
         
         dbRecord.setTemplate(enrollment.getTemplate());
         
@@ -150,6 +164,8 @@ public class StartMyFutronic extends FutronicSdkBase
 			System.out.println("Enrollment failed. Check for exceptions.");
 		}
 		m_State = EnrollmentState.ready_to_process;
+		
+
 		
 	}
 
