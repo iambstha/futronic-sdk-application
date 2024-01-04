@@ -36,6 +36,7 @@ public class FutronicController extends FutronicSdkBase {
 			EnrollmentManager enrollmentManager = new EnrollmentManager();
 			enrollmentManager.OnGetBaseTemplateComplete(true, 0);
 			
+			
 		} catch (FutronicException e) {
 			e.printStackTrace();
 		}

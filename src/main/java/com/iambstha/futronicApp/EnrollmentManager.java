@@ -5,7 +5,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.Base64;
 import java.util.Date;
 import java.util.Scanner;
 
@@ -30,22 +29,15 @@ public class EnrollmentManager extends FutronicSdkBase implements IEnrollmentCal
 	private Object m_OperationObj;
 
 	static final long serialVersionUID = 1L;
-	static final String kCompanyName = "Futronic";
-	static final String kProductName = "SDK 4.0";
-	static final String kDbName = "DataBaseNet";
+	static final String kCompanyName = "Smart Solutions Technology";
+	static final String kProductName = "Futronic Fingerprint";
+	static final String kDbName = "DataBaseRecord";
 
 	private String m_DbDir;
-
-	private String qMaxFrames;
-	private Boolean qDetectFakeFinger;
-	private Boolean qMIOTOff;
-	private Boolean qFastMode;
-	private Integer qIdentificationLimit;
 
 	public EnrollmentManager() throws FutronicException {
 		super();
 
-		// Get database folder
 		try {
 			m_DbDir = GetDatabaseDir();
 		} catch (AppException e) {
@@ -53,15 +45,15 @@ public class EnrollmentManager extends FutronicSdkBase implements IEnrollmentCal
 			System.exit(0);
 		}
 
-		// Set default parameters
 		try {
 			FutronicEnrollment enrollment = new FutronicEnrollment();
 			enrollment.setMaxModels(3);
-			qMaxFrames = String.valueOf(enrollment.getMaxModels());
-			qDetectFakeFinger = enrollment.getFakeDetection();
-			qMIOTOff = enrollment.getMIOTControlOff();
-			qFastMode = enrollment.getFastMode();
-			qIdentificationLimit = enrollment.getIdentificationsLeft();
+			enrollment.setMIOTControlOff(true);
+			enrollment.setVersion(m_Version);
+			enrollment.setFARN(m_FARN);
+			enrollment.setFakeDetection(true);
+			enrollment.setFastMode(true);
+
 		} catch (FutronicException e) {
 			e.printStackTrace();
 			System.exit(0);
@@ -69,7 +61,9 @@ public class EnrollmentManager extends FutronicSdkBase implements IEnrollmentCal
 
 		futronicIdentification = new FutronicIdentification();
 		futronicIdentification.setFakeDetection(true);
-		futronicIdentification.setFARnLevel(FarnValues.farn_high);
+		futronicIdentification.setFARnLevel(FarnValues.farn_normal);
+
+		m_Operation = null;
 	}
 
 	@Override
@@ -79,7 +73,7 @@ public class EnrollmentManager extends FutronicSdkBase implements IEnrollmentCal
 
 	@Override
 	public void OnTakeOff(FTR_PROGRESS Progress) {
-		System.out.println("Finger is taken off.");
+		System.out.println("Please take off your finger..");
 	}
 
 	@Override
@@ -99,7 +93,8 @@ public class EnrollmentManager extends FutronicSdkBase implements IEnrollmentCal
 			ImageIO.write(Progress, "png", baos);
 			byte[] imageData = baos.toByteArray();
 
-			
+			System.out.println(imageData);
+
 			try {
 				actionEnroll(getInputName());
 			} catch (Exception e) {
@@ -108,7 +103,7 @@ public class EnrollmentManager extends FutronicSdkBase implements IEnrollmentCal
 				baos.close();
 			}
 
-			m_State = EnrollmentState.ready_to_process;
+//			m_State = EnrollmentState.ready_to_process;
 
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -123,36 +118,43 @@ public class EnrollmentManager extends FutronicSdkBase implements IEnrollmentCal
 
 	@Override
 	public void OnEnrollmentComplete(boolean bSuccess, int nResult) {
-        System.out.println ("Enrollment State: " + bSuccess + " with return code: " + nResult );
-        System.out.println(m_State);
-        if( bSuccess )
-        {
-            System.out.println ("Enrollment process finished successfully. Username: " + 
-                    ((DbRecord)m_OperationObj).getUserName() );
-            System.out.println (" Quality: " + 
-                    ((FutronicEnrollment)m_Operation).getQuality() );
+		System.out.println("Enrollment process completed. Success: " + bSuccess + ", Result: " + nResult);
+		System.out.println(m_State);
+		System.out.println(m_bDispose);
+		System.out.println(m_bCancel);
+		System.out.println(m_SyncRoot);
+		System.out.println(m_CallBack);
+		System.out.println(m_WorkedThread);
 
-            // Set template into passport and save it
-            ((DbRecord)m_OperationObj).setTemplate( ((FutronicEnrollment)m_Operation).getTemplate() );
-            try
-            {
-                ((DbRecord)m_OperationObj).Save( m_DbDir + File.separator + ((DbRecord)m_OperationObj).getUserName() );
-            }
-            catch( IOException e )
-            {
-                e.printStackTrace();
-            }
-            
-        } else {
-        	System.out.println("Enrollment process failed. Error description: " + 
-                    FutronicSdkBase.SdkRetCode2Message(nResult) );
-        }
+		if (bSuccess) {
+			if ((FutronicEnrollment) m_Operation != null) {
 
-        m_Operation = null;
-        m_OperationObj = null;
+				if (m_State == EnrollmentState.ready_to_process) {
+					System.out.println("Enrollment still in progress. Cannot access quality now.");
+				} else {
+					System.out.println("Enrollment process finished successfully. Quality: "
+							+ ((FutronicEnrollment) m_Operation).getQuality());
+
+					((DbRecord) m_OperationObj).setTemplate(((FutronicEnrollment) m_Operation).getTemplate());
+					try {
+						((DbRecord) m_OperationObj)
+								.Save(m_DbDir + File.separator + ((DbRecord) m_OperationObj).getUserName());
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
+
+			} else {
+				System.out.println("Error: Enrollment operation object is null");
+			}
+		} else {
+			System.out.println(
+					"Enrollment process failed. Error description: " + FutronicSdkBase.SdkRetCode2Message(nResult));
+		}
+
+		m_Operation = null;
+		m_OperationObj = null;
 	}
-
-
 
 	@Override
 	public void OnGetBaseTemplateComplete(boolean bSuccess, int nResult) {
@@ -161,7 +163,6 @@ public class EnrollmentManager extends FutronicSdkBase implements IEnrollmentCal
 			if (futronicIdentification instanceof FutronicIdentification) {
 				FutronicIdentification identification = (FutronicIdentification) futronicIdentification;
 				identification.GetBaseTemplate(this);
-				m_State = EnrollmentState.ready_to_process;
 			} else {
 				throw new FutronicException(nResult, "Invalid operation type");
 			}
@@ -172,7 +173,7 @@ public class EnrollmentManager extends FutronicSdkBase implements IEnrollmentCal
 	}
 
 	static private String GetDatabaseDir() throws AppException {
-		String userDocumentFolder = "C:\\Users\\iambstha\\OneDrive\\Desktop\\Working Enrollment";
+		String userDocumentFolder = "C:\\Users\\iambstha\\OneDrive\\Desktop";
 //            String userDocumentFolder = Shell32Util.getFolderPath( ShlObj.CSIDL_MYDOCUMENTS );
 		File companyFolder = new File(userDocumentFolder, kCompanyName);
 		if (companyFolder.exists()) {
@@ -219,77 +220,62 @@ public class EnrollmentManager extends FutronicSdkBase implements IEnrollmentCal
 		return dataBaseFolder.getAbsolutePath();
 	}
 
-    private void actionEnroll(String name)
-    {
-        try
-        {
-            
-            String szUserName = name;
-            if( isUserExists( szUserName ) )
-            {
-                System.out.println("User already exists");
-                    return;
-            } else {
-                CreateFile( szUserName );
-            }
-            
-            m_OperationObj = new DbRecord();
-            ((DbRecord)m_OperationObj).setUserName( szUserName );
-            
-            m_Operation = new FutronicEnrollment();
+	private void actionEnroll(String name) {
+		try {
 
-            // Set control properties
-            m_Operation.setFakeDetection( !qDetectFakeFinger );
-            m_Operation.setFFDControl( true );
-            m_Operation.setFARnLevel( FarnValues.farn_normal );
-            m_Operation.setFastMode( qFastMode );
-            m_Operation.setVersion(VersionCompatible.ftr_version_compatible);
-            
-            ((FutronicEnrollment)m_Operation).setMIOTControlOff( qMIOTOff );
-            ((FutronicEnrollment)m_Operation).setMaxModels( Integer.parseInt( (String)qMaxFrames ) );
+			String szUserName = name;
+			if (isUserExists(szUserName)) {
+				System.out.println("User already exists");
+				return;
+			} else {
+				CreateFile(szUserName);
+			}
 
-            // start enrollment process
-            ((FutronicEnrollment)m_Operation).Enrollment( this );
-        }
-        catch( Exception e )
-        {
-            e.printStackTrace();
-            m_Operation = null;
-            m_OperationObj = null;
-        }
+			m_OperationObj = new DbRecord();
+			((DbRecord) m_OperationObj).setUserName(szUserName);
 
-    }//GEN-LAST:event_btnEnrollActionPerformed
-    
-    private boolean isUserExists( String szUserName )
-    {
-        File f = new File( m_DbDir, szUserName );
-        return f.exists();
-    }
+			m_Operation = new FutronicEnrollment();
+			m_Operation.setFakeDetection(true);
+			m_Operation.setFFDControl(true);
+			m_Operation.setFARnLevel(FarnValues.farn_normal);
+			m_Operation.setFastMode(true);
+			m_Operation.setVersion(VersionCompatible.ftr_version_compatible);
+			((FutronicEnrollment) m_Operation).setMIOTControlOff(true);
+			((FutronicEnrollment) m_Operation).setMaxModels(3);
 
-    private void CreateFile( String szFileName )
-        throws AppException
-    {
-        File f = new File( m_DbDir, szFileName );
-        try
-        {
-            f.createNewFile();
-            f.delete();
-            System.out.println("File created successfully.");
-        }
-        catch( IOException e )
-        {
-            throw new AppException( "Can not create file " + szFileName + " in database." );
-        }
-        catch( SecurityException e )
-        {
-            throw new AppException( "Can not create file " + szFileName + " in database. Access denied" );
-        }
-    }
-    
-    private String getInputName() {
-        Scanner scanner = new Scanner(System.in);
-        System.out.print("Enter your name: ");
-        return scanner.nextLine();
-    }
-	
+			((FutronicEnrollment) m_Operation).Enrollment(this);
+
+			Thread.sleep(5000);
+		} catch (Exception e) {
+			e.printStackTrace();
+			m_Operation = null;
+			m_OperationObj = null;
+		}
+
+	}
+
+	private boolean isUserExists(String szUserName) {
+		File f = new File(m_DbDir, szUserName);
+		return f.exists();
+	}
+
+	private void CreateFile(String szFileName) throws AppException {
+		File f = new File(m_DbDir, szFileName);
+		try {
+			f.createNewFile();
+			f.delete();
+			System.out.println("File created successfully.");
+		} catch (IOException e) {
+			throw new AppException("Can not create file " + szFileName + " in database.");
+		} catch (SecurityException e) {
+			throw new AppException("Can not create file " + szFileName + " in database. Access denied");
+		}
+	}
+
+	private String getInputName() {
+		Scanner scanner = new Scanner(System.in);
+		System.out.print("Enter your name: ");
+		return scanner.nextLine();
+	}
+
 }
