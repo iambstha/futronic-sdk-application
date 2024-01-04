@@ -2,7 +2,9 @@ package com.iambstha.futronicApp;
 /*
  * DbRecord.java
  */
-
+/*
+ * DbRecord.java
+ */
 
 import java.io.*;
 import java.nio.*;
@@ -294,3 +296,4 @@ public class DbRecord
         return Users;
     }
 }
+
