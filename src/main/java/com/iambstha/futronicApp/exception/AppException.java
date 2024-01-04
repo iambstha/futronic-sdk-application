@@ -1,4 +1,4 @@
-package com.iambstha.futronicApp;
+package com.iambstha.futronicApp.exception;
 
 /*
  * AppException.java

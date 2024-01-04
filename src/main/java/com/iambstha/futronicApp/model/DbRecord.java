@@ -1,4 +1,4 @@
-package com.iambstha.futronicApp;
+package com.iambstha.futronicApp.model;
 /*
  * DbRecord.java
  */
@@ -11,6 +11,7 @@ import java.nio.*;
 import java.nio.charset.*;
 import java.util.Vector;
 import com.futronic.SDKHelper.*;
+import com.iambstha.futronicApp.exception.AppException;
 
 /**
  * This class represent a user fingerprint database record.
@@ -254,7 +255,7 @@ public class DbRecord
      *
      * @return reference to Vector objects with records
      */
-    static Vector< DbRecord > ReadRecords( String szDbDir )
+    public static Vector< DbRecord > ReadRecords( String szDbDir )
     {
         File DbDir;
         File[] files;

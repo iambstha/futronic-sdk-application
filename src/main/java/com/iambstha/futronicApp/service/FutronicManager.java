@@ -1,4 +1,4 @@
-package com.iambstha.futronicApp;
+package com.iambstha.futronicApp.service;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
@@ -6,11 +6,9 @@ import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Scanner;
 import java.util.Vector;
 
 import javax.imageio.ImageIO;
-import javax.swing.JOptionPane;
 
 import com.futronic.SDKHelper.FTR_PROGRESS;
 import com.futronic.SDKHelper.FtrIdentifyRecord;
@@ -24,27 +22,22 @@ import com.futronic.SDKHelper.IEnrollmentCallBack;
 import com.futronic.SDKHelper.IIdentificationCallBack;
 import com.futronic.SDKHelper.IVerificationCallBack;
 import com.futronic.SDKHelper.VersionCompatible;
+import com.iambstha.futronicApp.exception.AppException;
+import com.iambstha.futronicApp.model.DbRecord;
+import com.iambstha.futronicApp.utility.CustomUtilities;
 
-public class EnrollmentManager implements IEnrollmentCallBack, IIdentificationCallBack, IVerificationCallBack {
-
-	private FutronicIdentification futronicIdentification;
+public class FutronicManager implements IEnrollmentCallBack, IIdentificationCallBack, IVerificationCallBack {
 
 	private FutronicSdkBase m_Operation;
 	private Object m_OperationObj;
-
-	static final long serialVersionUID = 1L;
-	static final String kCompanyName = "Smart Solutions Technology";
-	static final String kProductName = "Futronic Fingerprint";
-	static final String kDbName = "DataBaseRecord";
-
-	static private int count = 0;
-
 	private String m_DbDir;
 
-	public EnrollmentManager() {
+	CustomUtilities customUtilities = new CustomUtilities();
+
+	public FutronicManager() {
 
 		try {
-			m_DbDir = GetDatabaseDir();
+			m_DbDir = customUtilities.GetDatabaseDir();
 		} catch (AppException e) {
 			e.printStackTrace();
 			System.exit(0);
@@ -61,6 +54,7 @@ public class EnrollmentManager implements IEnrollmentCallBack, IIdentificationCa
 			e.printStackTrace();
 			System.exit(0);
 		}
+		
 		m_Operation = null;
 	}
 
@@ -81,32 +75,19 @@ public class EnrollmentManager implements IEnrollmentCallBack, IIdentificationCa
 		String fileName = "image_" + timestamp + ".png";
 		String imagePath = directoryPath + fileName;
 
-		System.out.println("Image Clicked." + count + " Saving in progress: ");
+		System.out.println("Image Clicked. Saving in progress: ");
 
 		try {
 			ImageIO.write(Progress, "png", new File(imagePath));
 			System.out.println("Image saved to: " + imagePath);
-
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			ImageIO.write(Progress, "png", baos);
 			byte[] imageData = baos.toByteArray();
-
 			System.out.println(imageData);
-
-//			try {
-//				actionEnroll("Bishal");
-//			} catch (Exception e) {
-//				e.printStackTrace();
-//			} finally {
-//				baos.close();
-//			}
-
-//			m_State = EnrollmentState.ready_to_process;
 
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		count++;
 	}
 
 	@Override
@@ -120,11 +101,9 @@ public class EnrollmentManager implements IEnrollmentCallBack, IIdentificationCa
 		System.out.println("Enrollment process completed. Success: " + bSuccess + ", Result: " + nResult);
 
 		if (bSuccess) {
-			// set status string
 			System.out.println("Enrollment process finished successfully. Quality: "
 					+ ((FutronicEnrollment) m_Operation).getQuality());
 
-			// Set template into passport and save it
 			((DbRecord) m_OperationObj).setTemplate(((FutronicEnrollment) m_Operation).getTemplate());
 			try {
 				((DbRecord) m_OperationObj).Save(m_DbDir + File.separator + ((DbRecord) m_OperationObj).getUserName());
@@ -199,74 +178,18 @@ public class EnrollmentManager implements IEnrollmentCallBack, IIdentificationCa
 		m_OperationObj = null;
 	}
 
-	static private String GetDatabaseDir() throws AppException {
-		String userDocumentFolder = "C:\\Users\\iambstha\\OneDrive\\Desktop";
-//            String userDocumentFolder = Shell32Util.getFolderPath( ShlObj.CSIDL_MYDOCUMENTS );
-		File companyFolder = new File(userDocumentFolder, kCompanyName);
-		if (companyFolder.exists()) {
-			if (!companyFolder.isDirectory())
-				throw new AppException("Can not create database directory " + companyFolder.getAbsolutePath()
-						+ ". File with the same name already exist.");
-		} else {
-			try {
-				companyFolder.mkdir();
-			} catch (SecurityException e) {
-				throw new AppException(
-						"Can not create database directory " + companyFolder.getAbsolutePath() + ". Access denied.");
-			}
-		}
+	public void actionEnroll() {
 
-		File productFolder = new File(companyFolder, kProductName);
-		if (productFolder.exists()) {
-			if (!productFolder.isDirectory())
-				throw new AppException("Can not create database directory " + productFolder.getAbsolutePath()
-						+ ". File with the same name already exist.");
-		} else {
-			try {
-				productFolder.mkdir();
-			} catch (SecurityException e) {
-				throw new AppException(
-						"Can not create database directory " + productFolder.getAbsolutePath() + ". Access denied.");
-			}
-		}
-
-		File dataBaseFolder = new File(productFolder, kDbName);
-		if (dataBaseFolder.exists()) {
-			if (!dataBaseFolder.isDirectory())
-				throw new AppException("Can not create database directory " + dataBaseFolder.getAbsolutePath()
-						+ ". File with the same name already exist.");
-		} else {
-			try {
-				dataBaseFolder.mkdir();
-			} catch (SecurityException e) {
-				throw new AppException(
-						"Can not create database directory " + dataBaseFolder.getAbsolutePath() + ". Access denied.");
-			}
-		}
-
-		return dataBaseFolder.getAbsolutePath();
-	}
-
-	void actionEnroll()
-	{
-		
-	
 		try {
-			// Get user name
-			String szUserName = getInputName();
+			String szUserName = customUtilities.GetInputName();
 			if (szUserName == null || szUserName.length() == 0) {
 				return;
 			}
 
-			// Try create the file for template
-			if (isUserExists(szUserName)) {
-				int nResponse;
-				nResponse = 0;
-				if (nResponse == JOptionPane.NO_OPTION) {
-					return;
-				}
+			if (customUtilities.isUserExists(szUserName)) {
+				System.out.println(szUserName + " already exists.");
 			} else {
-				CreateFile(szUserName);
+				customUtilities.CreateFile(szUserName);
 			}
 
 			m_OperationObj = new DbRecord();
@@ -274,25 +197,11 @@ public class EnrollmentManager implements IEnrollmentCallBack, IIdentificationCa
 
 			m_Operation = new FutronicEnrollment();
 
-			// Set control properties
 			m_Operation.setFFDControl(true);
 			m_Operation.setFastMode(false);
 			((FutronicEnrollment) m_Operation).setMIOTControlOff(true);
 			((FutronicEnrollment) m_Operation).setMaxModels(3);
-
-			switch (0) {
-			case 0:
-				m_Operation.setVersion(VersionCompatible.ftr_version_previous);
-				break;
-
-			case 1:
-				m_Operation.setVersion(VersionCompatible.ftr_version_current);
-				break;
-
-			default:
-				m_Operation.setVersion(VersionCompatible.ftr_version_compatible);
-				break;
-			}
+			m_Operation.setVersion(VersionCompatible.ftr_version_current);
 
 			((FutronicEnrollment) m_Operation).Enrollment(this);
 		} catch (Exception e) {
@@ -301,9 +210,8 @@ public class EnrollmentManager implements IEnrollmentCallBack, IIdentificationCa
 		}
 
 	}
-	
-	void actionIdentify()
-	{
+
+	public void actionIdentify() {
 		Vector<DbRecord> Users = DbRecord.ReadRecords(m_DbDir);
 		if (Users.size() == 0) {
 			System.out.println("No users found.");
@@ -314,23 +222,10 @@ public class EnrollmentManager implements IEnrollmentCallBack, IIdentificationCa
 		try {
 			m_Operation = new FutronicIdentification();
 
-			// Set control properties
 			m_Operation.setFakeDetection(false);
 			m_Operation.setFFDControl(true);
 			m_Operation.setFARN(2);
-			switch (0) {
-			case 0:
-				m_Operation.setVersion(VersionCompatible.ftr_version_previous);
-				break;
-
-			case 1:
-				m_Operation.setVersion(VersionCompatible.ftr_version_current);
-				break;
-
-			default:
-				m_Operation.setVersion(VersionCompatible.ftr_version_compatible);
-				break;
-			}
+			m_Operation.setVersion(VersionCompatible.ftr_version_current);
 			m_Operation.setFastMode(false);
 
 			((FutronicIdentification) m_Operation).GetBaseTemplate(this);
@@ -341,19 +236,16 @@ public class EnrollmentManager implements IEnrollmentCallBack, IIdentificationCa
 		}
 
 	}
-	
-	void actionVerify()// GEN-FIRST:event_btnVerifyActionPerformed
+
+	public void actionVerify()
 	{
 		Vector<DbRecord> users = DbRecord.ReadRecords(m_DbDir);
 		if (users.size() == 0) {
 			System.out.println("No users found");
 			return;
 		}
-        // Get the user name from the console
-        String userName = getInputName();
-
-        // Find the user in the list
-        DbRecord selectedUser = findUserByName(users, userName);
+		String userName = customUtilities.GetInputName();
+		DbRecord selectedUser = findUserByName(users, userName);
 		if (selectedUser == null) {
 			System.out.println("Selected user is null");
 			return;
@@ -362,7 +254,6 @@ public class EnrollmentManager implements IEnrollmentCallBack, IIdentificationCa
 		try {
 			m_Operation = new FutronicVerification(selectedUser.getTemplate());
 
-			// Set control properties
 			m_Operation.setFakeDetection(false);
 			m_Operation.setFFDControl(true);
 			switch (0) {
@@ -380,8 +271,6 @@ public class EnrollmentManager implements IEnrollmentCallBack, IIdentificationCa
 			}
 			m_Operation.setFastMode(false);
 
-
-			// start verification process
 			((FutronicVerification) m_Operation).Verification(this);
 		} catch (FutronicException e) {
 			e.printStackTrace();
@@ -389,53 +278,25 @@ public class EnrollmentManager implements IEnrollmentCallBack, IIdentificationCa
 			m_OperationObj = null;
 		}
 	}
-	
-    // Add this method to find a user by name in the list
-    private DbRecord findUserByName(Vector<DbRecord> users, String userName) {
-        for (DbRecord user : users) {
-            if (user.getUserName().equals(userName)) {
-                return user;
-            }
-        }
-        return null;
-    }
-	
-	void actionStop()
-	{
+
+	private DbRecord findUserByName(Vector<DbRecord> users, String userName) {
+		for (DbRecord user : users) {
+			if (user.getUserName().equals(userName)) {
+				return user;
+			}
+		}
+		return null;
+	}
+
+	public void actionStop() {
 		m_Operation.OnCalcel();
 	}
-	
-	void actionExit()
-	{
+
+	public void actionExit() {
 		if (m_Operation != null) {
 			m_Operation.Dispose();
 		}
 		System.exit(0);
-	}
-
-	private boolean isUserExists(String szUserName) {
-		File f = new File(m_DbDir, szUserName);
-		return f.exists();
-	}
-
-	private void CreateFile(String szFileName) throws AppException {
-		File f = new File(m_DbDir, szFileName);
-		try {
-			f.createNewFile();
-			f.delete();
-			System.out.println("File created successfully.");
-		} catch (IOException e) {
-			throw new AppException("Can not create file " + szFileName + " in database.");
-		} catch (SecurityException e) {
-			throw new AppException("Can not create file " + szFileName + " in database. Access denied");
-		}
-	}
-
-	private String getInputName() {
-		try (Scanner scanner = new Scanner(System.in)) {
-			System.out.print("Enter your name: ");
-			return scanner.nextLine();
-		}
 	}
 
 }
