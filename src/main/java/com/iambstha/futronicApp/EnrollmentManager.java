@@ -20,6 +20,8 @@ import com.futronic.SDKHelper.FutronicSdkBase;
 import com.futronic.SDKHelper.IEnrollmentCallBack;
 import com.futronic.SDKHelper.IIdentificationCallBack;
 import com.futronic.SDKHelper.VersionCompatible;
+import com.machinezoo.sourceafis.FingerprintImage;
+import com.machinezoo.sourceafis.FingerprintTemplate;
 
 public class EnrollmentManager extends FutronicSdkBase implements IEnrollmentCallBack, IIdentificationCallBack {
 
