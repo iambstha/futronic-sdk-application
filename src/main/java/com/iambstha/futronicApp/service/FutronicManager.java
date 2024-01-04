@@ -26,6 +26,12 @@ import com.iambstha.futronicApp.exception.AppException;
 import com.iambstha.futronicApp.model.DbRecord;
 import com.iambstha.futronicApp.utility.CustomUtilities;
 
+/**
+ * This class represent the Futronic initialization and the services it provides.
+ *
+ * @author Bishal Shrestha
+ */
+
 public class FutronicManager implements IEnrollmentCallBack, IIdentificationCallBack, IVerificationCallBack {
 
 	private FutronicSdkBase m_Operation;
@@ -54,7 +60,7 @@ public class FutronicManager implements IEnrollmentCallBack, IIdentificationCall
 			e.printStackTrace();
 			System.exit(0);
 		}
-		
+
 		m_Operation = null;
 	}
 
@@ -147,6 +153,7 @@ public class FutronicManager implements IEnrollmentCallBack, IIdentificationCall
 		StringBuffer szMessage = new StringBuffer();
 		if (bSuccess) {
 			System.out.println("Starting identification...");
+			@SuppressWarnings("unchecked")
 			Vector<DbRecord> Users = (Vector<DbRecord>) m_OperationObj;
 			FtrIdentifyRecord[] rgRecords = new FtrIdentifyRecord[Users.size()];
 			for (int iUsers = 0; iUsers < Users.size(); iUsers++) {
@@ -237,8 +244,7 @@ public class FutronicManager implements IEnrollmentCallBack, IIdentificationCall
 
 	}
 
-	public void actionVerify()
-	{
+	public void actionVerify() {
 		Vector<DbRecord> users = DbRecord.ReadRecords(m_DbDir);
 		if (users.size() == 0) {
 			System.out.println("No users found");

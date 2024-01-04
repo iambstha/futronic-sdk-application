@@ -7,7 +7,7 @@ package com.iambstha.futronicApp.exception;
 
 /**
  *
- * @author Shustikov
+ * @author Bishal Shrestha
  */
 public class AppException extends java.lang.Exception
 {

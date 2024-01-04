@@ -2,9 +2,7 @@ package com.iambstha.futronicApp.model;
 /*
  * DbRecord.java
  */
-/*
- * DbRecord.java
- */
+
 
 import java.io.*;
 import java.nio.*;
@@ -16,13 +14,11 @@ import com.iambstha.futronicApp.exception.AppException;
 /**
  * This class represent a user fingerprint database record.
  *
- * @author Shustikov
+ * @author Bishal Shrestha
  */
 public class DbRecord
 {
-    /**
-     * User name
-     */
+
     private String m_UserName;
 
     /**
@@ -76,7 +72,8 @@ public class DbRecord
      * @exception InvalidObjectException the file has invalid structure.
      * @exception FileNotFoundException the file not found or access denied.
      */
-    private void Load( String szFileName )
+    @SuppressWarnings("resource")
+	private void Load( String szFileName )
         throws FileNotFoundException, NullPointerException, AppException
     {
         FileInputStream fs = null;
@@ -98,6 +95,7 @@ public class DbRecord
             // Read user name length and user name in UTF8
             if( nFileSize < 2 )
                 throw new AppException( "Bad file " + f.getPath() );
+            
             int nLength = (fs.read() << 8) | fs.read();
             nFileSize -= 2;
             if( nFileSize < nLength )
@@ -127,18 +125,11 @@ public class DbRecord
         }
         catch( SecurityException e )
         {
-            if( f == null )
-                throw new AppException( "Denies read access to the file " + f.getPath() );
-            else {
-                throw new AppException( "Denies read access to the file " + szFileName );
-            }
+            throw new AppException( "Denies read access to the file " + szFileName );
         }
         catch( IOException e)
         {
-            if( f == null )
-                throw new AppException( "Bad file " + f.getPath() );
-            else
-                throw new AppException( "Bad file " + szFileName );
+            throw new AppException( "Bad file " + szFileName );
         }
     }
 
