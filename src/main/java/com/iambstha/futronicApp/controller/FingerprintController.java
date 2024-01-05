@@ -1,5 +1,7 @@
 package com.iambstha.futronicApp.controller;
-
+/*
+ * FingerprintController.java
+ */
 import java.io.IOException;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.futronic.SDKHelper.FutronicException;
 import com.futronic.SDKHelper.FutronicSdkBase;
-import com.iambstha.futronicApp.service.FutronicManager;
+import com.iambstha.futronicApp.service.FingerprintServiceImpl;
 
 
 /**
@@ -20,45 +22,45 @@ import com.iambstha.futronicApp.service.FutronicManager;
  * @author Bishal Shrestha
  */
 @RestController
-public class FutronicController extends FutronicSdkBase {
+public class FingerprintController extends FutronicSdkBase {
 
-	public FutronicController(FutronicManager futronicManager) throws FutronicException {
+	public FingerprintController(FingerprintServiceImpl fingerprintServiceImpl) throws FutronicException {
 		super();
-		this.futronicManager = futronicManager;
+		this.fingerprintServiceImpl = fingerprintServiceImpl;
 	}
 
 	@Autowired
-	private final FutronicManager futronicManager;
+	private final FingerprintServiceImpl fingerprintServiceImpl;
 
 //	FutronicManager enrollmentManager = new FutronicManager();
 
 	@PostMapping(value = "/enroll")
 	public String enrollFtr(@RequestBody String userName) throws FutronicException, IOException {
-		futronicManager.actionEnroll(userName);
+		fingerprintServiceImpl.actionEnroll(userName);
 		return "Futronic enrollment initialized successfully!";
 	}
 	
 	@GetMapping("/identify")
 	public String identifyFtr() throws FutronicException {
-		futronicManager.actionIdentify();
+		fingerprintServiceImpl.actionIdentify();
 		return "Futronic identification initialized successfully!";
 	}
 
 	@PostMapping("/verify")
 	public String verifyFtr(@RequestBody String userName) throws FutronicException {
-		futronicManager.actionVerify(userName);
+		fingerprintServiceImpl.actionVerify(userName);
 		return "Futronic verification initialized successfully!";
 	}
 
 	@GetMapping("/stop")
 	public String stopFtr() throws FutronicException {
-		futronicManager.actionStop();
+		fingerprintServiceImpl.actionStop();
 		return "Futronic stopped successfully!";
 	}
 
 	@GetMapping("/exit")
 	public String exitFtr() throws FutronicException {
-		futronicManager.actionExit();
+		fingerprintServiceImpl.actionExit();
 		return "Futronic exited successfully!";
 	}
 

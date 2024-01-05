@@ -1,5 +1,7 @@
 package com.iambstha.futronicApp.service;
-
+/*
+ * FingerprintServiceImpl.java
+ */
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -35,19 +37,15 @@ import com.iambstha.futronicApp.repository.FingerprintRepository;
  */
 
 @Service
-public class FutronicManager implements IEnrollmentCallBack, IIdentificationCallBack, IVerificationCallBack {
+public class FingerprintServiceImpl implements FingerprintService, IEnrollmentCallBack, IIdentificationCallBack, IVerificationCallBack {
 
 	@Autowired
 	private final FingerprintRepository fingerprintRepository;
 	
-
 	private FutronicSdkBase m_Operation;
 	private Object m_OperationObj;
-	
-	private byte[] imageData;
 
-
-	public FutronicManager(FingerprintRepository fingerprintRepository) {
+	public FingerprintServiceImpl(FingerprintRepository fingerprintRepository) {
 		this.fingerprintRepository = fingerprintRepository;
 		try {
 			FutronicEnrollment enrollment = new FutronicEnrollment();
@@ -55,12 +53,10 @@ public class FutronicManager implements IEnrollmentCallBack, IIdentificationCall
 			enrollment.setMIOTControlOff(true);
 			enrollment.setFakeDetection(true);
 			enrollment.setFastMode(true);
-
 		} catch (FutronicException e) {
 			e.printStackTrace();
 			System.exit(0);
 		}
-
 		m_Operation = null;
 	}
 
@@ -90,7 +86,7 @@ public class FutronicManager implements IEnrollmentCallBack, IIdentificationCall
 			System.out.println("Image saved to: " + imagePath);
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			ImageIO.write(Progress, "png", baos);
-			imageData = baos.toByteArray();
+			byte[] imageData = baos.toByteArray();
 			System.out.println(imageData);
 
 		} catch (IOException e) {
@@ -126,26 +122,26 @@ public class FutronicManager implements IEnrollmentCallBack, IIdentificationCall
 
 	@Override
 	public void OnVerificationComplete(boolean bSuccess, int nResult, boolean bVerificationSuccess) {
-		StringBuffer szResult = new StringBuffer();
+		StringBuffer msg = new StringBuffer();
 		if (bSuccess) {
 			if (bVerificationSuccess) {
-				szResult.append("Verification is successful. User Name: "
+				msg.append("Verification is successful. User Name: "
 						+ ((FingerprintEntity) m_OperationObj).getM_UserName());
 			} else {
-				szResult.append("Verification failed.");
+				msg.append("Verification failed.");
 			}
 		} else {
-			szResult.append(
+			msg.append(
 					"Verification process failed. Error description: " + FutronicSdkBase.SdkRetCode2Message(nResult));
 		}
-		System.out.println(szResult.toString());
+		System.out.println(msg.toString());
 		m_Operation = null;
 		m_OperationObj = null;
 	}
 
 	@Override
 	public void OnGetBaseTemplateComplete(boolean bSuccess, int nResult) {
-		StringBuffer szMessage = new StringBuffer();
+		StringBuffer  msg = new StringBuffer();
 		if (bSuccess) {
 			System.out.println("Starting identification...");
 			@SuppressWarnings("unchecked")
@@ -157,23 +153,23 @@ public class FutronicManager implements IEnrollmentCallBack, IIdentificationCall
 
 			nResult = ((FutronicIdentification) m_Operation).Identification(rgRecords, result);
 			if (nResult == FutronicSdkBase.RETCODE_OK) {
-				szMessage.append("Identification process complete. User: ");
+				msg.append("Identification process complete. User: ");
 				if (result.m_Index != -1) {
-					szMessage.append(users.get(result.m_Index).getM_UserName());
+					msg.append(users.get(result.m_Index).getM_UserName());
 				} else {
-					szMessage.append("not found");
+					msg.append("not found");
 				}
 			} else {
-				szMessage.append("Identification failed.");
-				szMessage.append(FutronicSdkBase.SdkRetCode2Message(nResult));
+				msg.append("Identification failed.");
+				msg.append(FutronicSdkBase.SdkRetCode2Message(nResult));
 			}
 
 		} else {
-			szMessage.append("Can not retrieve base template.");
-			szMessage.append("Error description: ");
-			szMessage.append(FutronicSdkBase.SdkRetCode2Message(nResult));
+			msg.append("Can not retrieve base template.");
+			msg.append("Error description: ");
+			msg.append(FutronicSdkBase.SdkRetCode2Message(nResult));
 		}
-		System.out.println(szMessage.toString());
+		System.out.println(msg.toString());
 		m_Operation = null;
 		m_OperationObj = null;
 	}
@@ -185,8 +181,6 @@ public class FutronicManager implements IEnrollmentCallBack, IIdentificationCall
 			if (szUserName == null || szUserName.length() == 0) {
 				return;
 			}
-
-//			m_OperationObj = new DbRecord();
 			m_OperationObj = new FingerprintEntity();
 			((FingerprintEntity) m_OperationObj).setM_UserName(szUserName);
 
@@ -263,15 +257,6 @@ public class FutronicManager implements IEnrollmentCallBack, IIdentificationCall
 		}
 	}
 
-	private FingerprintEntity findUserByName(List<FingerprintEntity> users, String userName) {
-		for (FingerprintEntity user : users) {
-			if (user.getM_UserName().equals(userName)) {
-				return user;
-			}
-		}
-		return null;
-	}
-
 	public void actionStop() {
 		if (m_Operation != null) {
 			m_Operation.OnCalcel();
@@ -283,6 +268,15 @@ public class FutronicManager implements IEnrollmentCallBack, IIdentificationCall
 			m_Operation.Dispose();
 		}
 		System.exit(0);
+	}
+	
+	private FingerprintEntity findUserByName(List<FingerprintEntity> users, String userName) {
+		for (FingerprintEntity user : users) {
+			if (user.getM_UserName().equals(userName)) {
+				return user;
+			}
+		}
+		return null;
 	}
 
 }

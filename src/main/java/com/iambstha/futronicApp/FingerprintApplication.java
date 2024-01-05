@@ -14,10 +14,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  */
 
 @SpringBootApplication
-public class FutronicApplication {
+public class FingerprintApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(FutronicApplication.class, args);
+		SpringApplication.run(FingerprintApplication.class, args);
 	}
 
 }

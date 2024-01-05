@@ -1,5 +1,7 @@
 package com.iambstha.futronicApp.model;
-
+/*
+ * FingerprintEntity.java
+ */
 import java.util.Date;
 
 import com.futronic.SDKHelper.FtrIdentifyRecord;
