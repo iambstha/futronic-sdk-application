@@ -27,11 +27,9 @@ import com.futronic.SDKHelper.IVerificationCallBack;
 import com.futronic.SDKHelper.VersionCompatible;
 import com.iambstha.futronicApp.model.FingerprintEntity;
 import com.iambstha.futronicApp.repository.FingerprintRepository;
-import com.iambstha.futronicApp.utility.CustomUtilities;
 
 /**
- * This class represent the Futronic initialization and the services it
- * provides.
+ * This class acts as the service implementation for the fingerprint controller
  *
  * @author Bishal Shrestha
  */
@@ -48,7 +46,6 @@ public class FutronicManager implements IEnrollmentCallBack, IIdentificationCall
 	
 	private byte[] imageData;
 
-	CustomUtilities customUtilities = new CustomUtilities();
 
 	public FutronicManager(FingerprintRepository fingerprintRepository) {
 		this.fingerprintRepository = fingerprintRepository;
@@ -187,11 +184,6 @@ public class FutronicManager implements IEnrollmentCallBack, IIdentificationCall
 			String szUserName = name;
 			if (szUserName == null || szUserName.length() == 0) {
 				return;
-			}
-			if (customUtilities.isUserExists(szUserName)) {
-				System.out.println(szUserName + " already exists.");
-			} else {
-				customUtilities.CreateFile(szUserName);
 			}
 
 //			m_OperationObj = new DbRecord();

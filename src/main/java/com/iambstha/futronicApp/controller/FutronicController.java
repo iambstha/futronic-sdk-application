@@ -13,6 +13,12 @@ import com.futronic.SDKHelper.FutronicException;
 import com.futronic.SDKHelper.FutronicSdkBase;
 import com.iambstha.futronicApp.service.FutronicManager;
 
+
+/**
+ * This is a controller class for all the fingerprint related event handling
+ *
+ * @author Bishal Shrestha
+ */
 @RestController
 public class FutronicController extends FutronicSdkBase {
 

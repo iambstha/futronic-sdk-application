@@ -12,6 +12,13 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
+
+/**
+ * Entity of fingerprint schema
+ *
+ * @author Bishal Shrestha
+ */
+
 @Entity
 @Table(name = "fingerprint_entity")
 @Data

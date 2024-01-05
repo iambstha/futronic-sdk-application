@@ -5,11 +5,13 @@ package com.iambstha.futronicApp.exception;
  */
 
 
+
 /**
+ * A custom exception
  *
  * @author Bishal Shrestha
  */
-public class AppException extends java.lang.Exception
+public class AppException extends Exception
 {
     
     /**
