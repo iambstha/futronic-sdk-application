@@ -6,9 +6,12 @@ import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Vector;
+import java.util.List;
 
 import javax.imageio.ImageIO;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import com.futronic.SDKHelper.FTR_PROGRESS;
 import com.futronic.SDKHelper.FtrIdentifyRecord;
@@ -22,33 +25,30 @@ import com.futronic.SDKHelper.IEnrollmentCallBack;
 import com.futronic.SDKHelper.IIdentificationCallBack;
 import com.futronic.SDKHelper.IVerificationCallBack;
 import com.futronic.SDKHelper.VersionCompatible;
-import com.iambstha.futronicApp.exception.AppException;
-import com.iambstha.futronicApp.model.DbRecord;
+import com.iambstha.futronicApp.model.FingerprintEntity;
+import com.iambstha.futronicApp.repository.FingerprintRepository;
 import com.iambstha.futronicApp.utility.CustomUtilities;
 
 /**
- * This class represent the Futronic initialization and the services it provides.
+ * This class represent the Futronic initialization and the services it
+ * provides.
  *
  * @author Bishal Shrestha
  */
 
+@Service
 public class FutronicManager implements IEnrollmentCallBack, IIdentificationCallBack, IVerificationCallBack {
+
+	@Autowired
+	private final FingerprintRepository fingerprintRepository;
 
 	private FutronicSdkBase m_Operation;
 	private Object m_OperationObj;
-	private String m_DbDir;
 
 	CustomUtilities customUtilities = new CustomUtilities();
 
-	public FutronicManager() {
-
-		try {
-			m_DbDir = customUtilities.GetDatabaseDir();
-		} catch (AppException e) {
-			e.printStackTrace();
-			System.exit(0);
-		}
-
+	public FutronicManager(FingerprintRepository fingerprintRepository) {
+		this.fingerprintRepository = fingerprintRepository;
 		try {
 			FutronicEnrollment enrollment = new FutronicEnrollment();
 			enrollment.setMaxModels(3);
@@ -104,18 +104,14 @@ public class FutronicManager implements IEnrollmentCallBack, IIdentificationCall
 
 	@Override
 	public void OnEnrollmentComplete(boolean bSuccess, int nResult) {
-		System.out.println("Enrollment process completed. Success: " + bSuccess + ", Result: " + nResult);
 
 		if (bSuccess) {
 			System.out.println("Enrollment process finished successfully. Quality: "
 					+ ((FutronicEnrollment) m_Operation).getQuality());
 
-			((DbRecord) m_OperationObj).setTemplate(((FutronicEnrollment) m_Operation).getTemplate());
-			try {
-				((DbRecord) m_OperationObj).Save(m_DbDir + File.separator + ((DbRecord) m_OperationObj).getUserName());
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+			((FingerprintEntity) m_OperationObj).setM_Template(((FutronicEnrollment) m_Operation).getTemplate());
+
+			fingerprintRepository.save(((FingerprintEntity) m_OperationObj));
 
 		} else {
 			System.out.println(
@@ -131,19 +127,16 @@ public class FutronicManager implements IEnrollmentCallBack, IIdentificationCall
 		StringBuffer szResult = new StringBuffer();
 		if (bSuccess) {
 			if (bVerificationSuccess) {
-				szResult.append("Verification is successful.");
-				szResult.append("User Name: ");
-				szResult.append(((DbRecord) m_OperationObj).getUserName());
+				szResult.append("Verification is successful. User Name: "
+						+ ((FingerprintEntity) m_OperationObj).getM_UserName());
 			} else {
 				szResult.append("Verification failed.");
 			}
 		} else {
-			szResult.append("Verification process failed.");
-			szResult.append("Error description: ");
-			szResult.append(FutronicSdkBase.SdkRetCode2Message(nResult));
+			szResult.append(
+					"Verification process failed. Error description: " + FutronicSdkBase.SdkRetCode2Message(nResult));
 		}
 		System.out.println(szResult.toString());
-
 		m_Operation = null;
 		m_OperationObj = null;
 	}
@@ -154,11 +147,9 @@ public class FutronicManager implements IEnrollmentCallBack, IIdentificationCall
 		if (bSuccess) {
 			System.out.println("Starting identification...");
 			@SuppressWarnings("unchecked")
-			Vector<DbRecord> Users = (Vector<DbRecord>) m_OperationObj;
-			FtrIdentifyRecord[] rgRecords = new FtrIdentifyRecord[Users.size()];
-			for (int iUsers = 0; iUsers < Users.size(); iUsers++) {
-				rgRecords[iUsers] = Users.get(iUsers).getFtrIdentifyRecord();
-			}
+			List<FingerprintEntity> users = (List<FingerprintEntity>) m_OperationObj;
+			FtrIdentifyRecord[] rgRecords = users.stream().map(FingerprintEntity::getFtrIdentifyRecord)
+					.toArray(FtrIdentifyRecord[]::new);
 
 			FtrIdentifyResult result = new FtrIdentifyResult();
 
@@ -166,7 +157,7 @@ public class FutronicManager implements IEnrollmentCallBack, IIdentificationCall
 			if (nResult == FutronicSdkBase.RETCODE_OK) {
 				szMessage.append("Identification process complete. User: ");
 				if (result.m_Index != -1) {
-					szMessage.append(Users.get(result.m_Index).getUserName());
+					szMessage.append(users.get(result.m_Index).getM_UserName());
 				} else {
 					szMessage.append("not found");
 				}
@@ -199,8 +190,9 @@ public class FutronicManager implements IEnrollmentCallBack, IIdentificationCall
 				customUtilities.CreateFile(szUserName);
 			}
 
-			m_OperationObj = new DbRecord();
-			((DbRecord) m_OperationObj).setUserName(szUserName);
+//			m_OperationObj = new DbRecord();
+			m_OperationObj = new FingerprintEntity();
+			((FingerprintEntity) m_OperationObj).setM_UserName(szUserName);
 
 			m_Operation = new FutronicEnrollment();
 
@@ -219,12 +211,12 @@ public class FutronicManager implements IEnrollmentCallBack, IIdentificationCall
 	}
 
 	public void actionIdentify() {
-		Vector<DbRecord> Users = DbRecord.ReadRecords(m_DbDir);
-		if (Users.size() == 0) {
+		List<FingerprintEntity> users = fingerprintRepository.findAll();
+		if (users.isEmpty()) {
 			System.out.println("No users found.");
 			return;
 		}
-		m_OperationObj = Users;
+		m_OperationObj = users;
 
 		try {
 			m_Operation = new FutronicIdentification();
@@ -246,9 +238,9 @@ public class FutronicManager implements IEnrollmentCallBack, IIdentificationCall
 
 	public void actionVerify() {
 
-		DbRecord selectedUser = null;
-		Vector<DbRecord> users = DbRecord.ReadRecords(m_DbDir);
-		if (users.size() == 0) {
+		FingerprintEntity selectedUser = null;
+		List<FingerprintEntity> users = fingerprintRepository.findAll();
+		if (users.isEmpty()) {
 			System.out.println("Users not found. Please, run enrollment process first.");
 			return;
 		}
@@ -260,7 +252,7 @@ public class FutronicManager implements IEnrollmentCallBack, IIdentificationCall
 		}
 		m_OperationObj = selectedUser;
 		try {
-			m_Operation = new FutronicVerification(selectedUser.getTemplate());
+			m_Operation = new FutronicVerification(selectedUser.getM_Template());
 
 			m_Operation.setFakeDetection(false);
 			m_Operation.setFFDControl(true);
@@ -275,9 +267,9 @@ public class FutronicManager implements IEnrollmentCallBack, IIdentificationCall
 		}
 	}
 
-	private DbRecord findUserByName(Vector<DbRecord> users, String userName) {
-		for (DbRecord user : users) {
-			if (user.getUserName().equals(userName)) {
+	private FingerprintEntity findUserByName(List<FingerprintEntity> users, String userName) {
+		for (FingerprintEntity user : users) {
+			if (user.getM_UserName().equals(userName)) {
 				return user;
 			}
 		}
