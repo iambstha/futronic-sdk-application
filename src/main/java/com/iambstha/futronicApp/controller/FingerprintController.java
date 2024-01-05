@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.futronic.SDKHelper.FutronicException;
 import com.futronic.SDKHelper.FutronicSdkBase;
+import com.iambstha.futronicApp.dto.EnrollDto;
 import com.iambstha.futronicApp.service.FingerprintServiceImpl;
 
 
@@ -34,9 +35,9 @@ public class FingerprintController extends FutronicSdkBase {
 
 //	FutronicManager enrollmentManager = new FutronicManager();
 
-	@PostMapping(value = "/enroll")
-	public String enrollFtr(@RequestBody String userName) throws FutronicException, IOException {
-		fingerprintServiceImpl.actionEnroll(userName);
+	@PostMapping(value = "/enroll", consumes = "application/json")
+	public String enrollFtr(@RequestBody EnrollDto enrollDto) throws FutronicException, IOException {
+		fingerprintServiceImpl.actionEnroll(enrollDto);
 		return "Futronic enrollment initialized successfully!";
 	}
 	

@@ -14,6 +14,6 @@ import com.iambstha.futronicApp.model.FingerprintEntity;
  */
 
 @Repository
-public interface FingerprintRepository extends JpaRepository<FingerprintEntity, byte[]> {
+public interface FingerprintRepository extends JpaRepository<FingerprintEntity, Long> {
 
 }

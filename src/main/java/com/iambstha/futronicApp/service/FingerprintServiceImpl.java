@@ -1,4 +1,5 @@
 package com.iambstha.futronicApp.service;
+
 /*
  * FingerprintServiceImpl.java
  */
@@ -27,6 +28,7 @@ import com.futronic.SDKHelper.IEnrollmentCallBack;
 import com.futronic.SDKHelper.IIdentificationCallBack;
 import com.futronic.SDKHelper.IVerificationCallBack;
 import com.futronic.SDKHelper.VersionCompatible;
+import com.iambstha.futronicApp.dto.EnrollDto;
 import com.iambstha.futronicApp.model.FingerprintEntity;
 import com.iambstha.futronicApp.repository.FingerprintRepository;
 
@@ -37,11 +39,12 @@ import com.iambstha.futronicApp.repository.FingerprintRepository;
  */
 
 @Service
-public class FingerprintServiceImpl implements FingerprintService, IEnrollmentCallBack, IIdentificationCallBack, IVerificationCallBack {
+public class FingerprintServiceImpl
+		implements FingerprintService, IEnrollmentCallBack, IIdentificationCallBack, IVerificationCallBack {
 
 	@Autowired
 	private final FingerprintRepository fingerprintRepository;
-	
+
 	private FutronicSdkBase m_Operation;
 	private Object m_OperationObj;
 
@@ -73,7 +76,7 @@ public class FingerprintServiceImpl implements FingerprintService, IEnrollmentCa
 	@Override
 	public void UpdateScreenImage(BufferedImage Progress) {
 		System.out.println("Image Clicked!");
-		
+
 		String directoryPath = "C:\\Users\\iambstha\\OneDrive\\Desktop\\image\\";
 		String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
 		String fileName = "image_" + timestamp + ".png";
@@ -125,8 +128,9 @@ public class FingerprintServiceImpl implements FingerprintService, IEnrollmentCa
 		StringBuffer msg = new StringBuffer();
 		if (bSuccess) {
 			if (bVerificationSuccess) {
-				msg.append("Verification is successful. User Name: "
-						+ ((FingerprintEntity) m_OperationObj).getM_UserName());
+				msg.append(
+						"Verification is successful. User Name: " + ((FingerprintEntity) m_OperationObj).getFirst_name()
+								+ " " + ((FingerprintEntity) m_OperationObj).getLast_name());
 			} else {
 				msg.append("Verification failed.");
 			}
@@ -141,7 +145,7 @@ public class FingerprintServiceImpl implements FingerprintService, IEnrollmentCa
 
 	@Override
 	public void OnGetBaseTemplateComplete(boolean bSuccess, int nResult) {
-		StringBuffer  msg = new StringBuffer();
+		StringBuffer msg = new StringBuffer();
 		if (bSuccess) {
 			System.out.println("Starting identification...");
 			@SuppressWarnings("unchecked")
@@ -155,7 +159,8 @@ public class FingerprintServiceImpl implements FingerprintService, IEnrollmentCa
 			if (nResult == FutronicSdkBase.RETCODE_OK) {
 				msg.append("Identification process complete. User: ");
 				if (result.m_Index != -1) {
-					msg.append(users.get(result.m_Index).getM_UserName());
+					msg.append(
+							users.get(result.m_Index).getFirst_name() + " " + users.get(result.m_Index).getLast_name());
 				} else {
 					msg.append("not found");
 				}
@@ -174,15 +179,18 @@ public class FingerprintServiceImpl implements FingerprintService, IEnrollmentCa
 		m_OperationObj = null;
 	}
 
-	public void actionEnroll(String name) {
+	public void actionEnroll(EnrollDto enrollDto) {
 
 		try {
-			String szUserName = name;
+			String szUserName = enrollDto.getFirstName() + " " + enrollDto.getLastName();
 			if (szUserName == null || szUserName.length() == 0) {
 				return;
 			}
 			m_OperationObj = new FingerprintEntity();
-			((FingerprintEntity) m_OperationObj).setM_UserName(szUserName);
+			((FingerprintEntity) m_OperationObj).setFirst_name(enrollDto.getFirstName());
+			((FingerprintEntity) m_OperationObj).setLast_name(enrollDto.getLastName());
+			((FingerprintEntity) m_OperationObj).setIndividual_type(enrollDto.getIndividualType());
+//			((FingerprintEntity) m_OperationObj).setM_UserName(szUserName);
 
 			m_Operation = new FutronicEnrollment();
 
@@ -234,8 +242,8 @@ public class FingerprintServiceImpl implements FingerprintService, IEnrollmentCa
 			System.out.println("Users not found. Please, run enrollment process first.");
 			return;
 		}
-		String userName = name;
-		selectedUser = findUserByName(users, userName);
+		String firstName = name;
+		selectedUser = findUserByFirstName(users, firstName);
 		if (selectedUser == null) {
 			System.out.println("Selected user is null");
 			return;
@@ -269,10 +277,10 @@ public class FingerprintServiceImpl implements FingerprintService, IEnrollmentCa
 		}
 		System.exit(0);
 	}
-	
-	private FingerprintEntity findUserByName(List<FingerprintEntity> users, String userName) {
+
+	private FingerprintEntity findUserByFirstName(List<FingerprintEntity> users, String firstName) {
 		for (FingerprintEntity user : users) {
-			if (user.getM_UserName().equals(userName)) {
+			if (user.getFirst_name().equals(firstName)) {
 				return user;
 			}
 		}

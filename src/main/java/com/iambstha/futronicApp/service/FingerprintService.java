@@ -1,4 +1,7 @@
 package com.iambstha.futronicApp.service;
+
+import com.iambstha.futronicApp.dto.EnrollDto;
+
 /*
  * FingerprintService.java
  */
@@ -13,7 +16,7 @@ package com.iambstha.futronicApp.service;
 public interface FingerprintService {
 
 	// Enrollment a new fingerprint
-	public void actionEnroll(String name);
+	public void actionEnroll(EnrollDto enrollDto);
 	
 	// Identifying a fingerprint
 	public String actionIdentify();

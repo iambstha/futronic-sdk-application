@@ -5,9 +5,12 @@ package com.iambstha.futronicApp.model;
 import java.util.Date;
 
 import com.futronic.SDKHelper.FtrIdentifyRecord;
+import com.iambstha.futronicApp.enums.IndividualType;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Data;
@@ -29,11 +32,20 @@ import lombok.Setter;
 public class FingerprintEntity {
 
 	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
+	
 	@Column
 	private byte[] m_Key;
 	
 	@Column
-	private String m_UserName;
+	private String first_name;
+	
+	@Column
+	private String last_name;
+	
+	@Column
+	private IndividualType individual_type;
 
 	@Column
 	private byte[] m_Template;
@@ -42,7 +54,9 @@ public class FingerprintEntity {
     private Date timestamp;
 
 	public FingerprintEntity() {
-		m_UserName = "";
+		first_name = "";
+		last_name ="";
+		individual_type = IndividualType.employee;
 		// Generate user's unique identifier
 		m_Key = new byte[16];
 		java.util.UUID guid = java.util.UUID.randomUUID();
