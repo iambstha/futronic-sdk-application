@@ -52,7 +52,7 @@ public class FingerprintServiceImpl
 		this.fingerprintRepository = fingerprintRepository;
 		try {
 			FutronicEnrollment enrollment = new FutronicEnrollment();
-			enrollment.setMaxModels(3);
+			enrollment.setMaxModels(8);
 			enrollment.setMIOTControlOff(true);
 			enrollment.setFakeDetection(true);
 			enrollment.setFastMode(true);
@@ -161,12 +161,17 @@ public class FingerprintServiceImpl
 				if (result.m_Index != -1) {
 					msg.append(
 							users.get(result.m_Index).getFirst_name() + " " + users.get(result.m_Index).getLast_name());
+
+					m_Operation = null;
+					m_OperationObj = null;
 				} else {
 					msg.append("not found");
+					actionIdentify();
 				}
 			} else {
 				msg.append("Identification failed.");
 				msg.append(FutronicSdkBase.SdkRetCode2Message(nResult));
+				actionIdentify();
 			}
 
 		} else {
@@ -175,8 +180,6 @@ public class FingerprintServiceImpl
 			msg.append(FutronicSdkBase.SdkRetCode2Message(nResult));
 		}
 		System.out.println(msg.toString());
-		m_Operation = null;
-		m_OperationObj = null;
 	}
 
 	public void actionEnroll(EnrollDto enrollDto) {
@@ -197,7 +200,7 @@ public class FingerprintServiceImpl
 			m_Operation.setFFDControl(true);
 			m_Operation.setFastMode(false);
 			((FutronicEnrollment) m_Operation).setMIOTControlOff(true);
-			((FutronicEnrollment) m_Operation).setMaxModels(3);
+			((FutronicEnrollment) m_Operation).setMaxModels(8);
 			m_Operation.setVersion(VersionCompatible.ftr_version_current);
 
 			((FutronicEnrollment) m_Operation).Enrollment(this);
@@ -253,10 +256,10 @@ public class FingerprintServiceImpl
 		try {
 			m_Operation = new FutronicVerification(selectedUser.getM_Template());
 
-			m_Operation.setFakeDetection(false);
+			m_Operation.setFakeDetection(true);
 			m_Operation.setFFDControl(true);
 			m_Operation.setVersion(VersionCompatible.ftr_version_current);
-			m_Operation.setFastMode(false);
+			m_Operation.setFastMode(true);
 
 			((FutronicVerification) m_Operation).Verification(this);
 		} catch (FutronicException e) {
