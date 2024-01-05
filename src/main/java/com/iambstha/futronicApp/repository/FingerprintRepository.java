@@ -6,6 +6,6 @@ import org.springframework.stereotype.Repository;
 import com.iambstha.futronicApp.model.FingerprintEntity;
 
 @Repository
-public interface FingerprintRepository extends JpaRepository<FingerprintEntity, Long> {
+public interface FingerprintRepository extends JpaRepository<FingerprintEntity, byte[]> {
 
 }

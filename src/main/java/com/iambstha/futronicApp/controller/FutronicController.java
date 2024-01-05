@@ -1,7 +1,12 @@
 package com.iambstha.futronicApp.controller;
 
+import java.io.IOException;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.futronic.SDKHelper.FutronicException;
@@ -15,16 +20,18 @@ public class FutronicController extends FutronicSdkBase {
 		super();
 		this.futronicManager = futronicManager;
 	}
-	
+
 	@Autowired
 	private final FutronicManager futronicManager;
-	
+
 //	FutronicManager enrollmentManager = new FutronicManager();
 
-	@GetMapping("/enroll")
-	public String enrollFtr() throws FutronicException {
-		futronicManager.actionEnroll();
-		return "Futronic enrollment initialized successfully!";
+	@PostMapping(value = "/enroll")
+	public ResponseEntity<byte[]> enrollFtr(@RequestBody String userName) throws FutronicException, IOException {
+		byte[] imageData = futronicManager.actionEnroll(userName);
+
+		// Send the image bytes in the response
+		return ResponseEntity.ok().body(imageData);
 	}
 
 	@GetMapping("/verify")

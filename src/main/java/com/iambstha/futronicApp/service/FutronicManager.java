@@ -44,6 +44,8 @@ public class FutronicManager implements IEnrollmentCallBack, IIdentificationCall
 
 	private FutronicSdkBase m_Operation;
 	private Object m_OperationObj;
+	
+	private byte[] imageData;
 
 	CustomUtilities customUtilities = new CustomUtilities();
 
@@ -76,6 +78,8 @@ public class FutronicManager implements IEnrollmentCallBack, IIdentificationCall
 
 	@Override
 	public void UpdateScreenImage(BufferedImage Progress) {
+		System.out.println("Image Clicked!");
+		
 		String directoryPath = "C:\\Users\\iambstha\\OneDrive\\Desktop\\image\\";
 		String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
 		String fileName = "image_" + timestamp + ".png";
@@ -88,7 +92,7 @@ public class FutronicManager implements IEnrollmentCallBack, IIdentificationCall
 			System.out.println("Image saved to: " + imagePath);
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			ImageIO.write(Progress, "png", baos);
-			byte[] imageData = baos.toByteArray();
+			imageData = baos.toByteArray();
 			System.out.println(imageData);
 
 		} catch (IOException e) {
@@ -176,14 +180,13 @@ public class FutronicManager implements IEnrollmentCallBack, IIdentificationCall
 		m_OperationObj = null;
 	}
 
-	public void actionEnroll() {
+	public byte[] actionEnroll(String name) {
 
 		try {
-			String szUserName = customUtilities.GetInputName();
+			String szUserName = name;
 			if (szUserName == null || szUserName.length() == 0) {
-				return;
+				return null;
 			}
-
 			if (customUtilities.isUserExists(szUserName)) {
 				System.out.println(szUserName + " already exists.");
 			} else {
@@ -207,6 +210,8 @@ public class FutronicManager implements IEnrollmentCallBack, IIdentificationCall
 			m_Operation = null;
 			m_OperationObj = null;
 		}
+		
+		return imageData;
 
 	}
 
