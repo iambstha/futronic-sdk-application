@@ -1,4 +1,5 @@
 package com.iambstha.futronicApp.controller;
+
 /*
  * FingerprintController.java
  */
@@ -16,7 +17,6 @@ import com.futronic.SDKHelper.FutronicSdkBase;
 import com.iambstha.futronicApp.dto.EnrollDto;
 import com.iambstha.futronicApp.service.FingerprintServiceImpl;
 
-
 /**
  * This is a controller class for all the fingerprint related event handling
  *
@@ -25,32 +25,46 @@ import com.iambstha.futronicApp.service.FingerprintServiceImpl;
 @RestController
 public class FingerprintController extends FutronicSdkBase {
 
+	@Autowired
+	private final FingerprintServiceImpl fingerprintServiceImpl;
+
 	public FingerprintController(FingerprintServiceImpl fingerprintServiceImpl) throws FutronicException {
 		super();
 		this.fingerprintServiceImpl = fingerprintServiceImpl;
 	}
 
-	@Autowired
-	private final FingerprintServiceImpl fingerprintServiceImpl;
-
-//	FutronicManager enrollmentManager = new FutronicManager();
-
 	@PostMapping(value = "/enroll", consumes = "application/json")
-	public String enrollFtr(@RequestBody EnrollDto enrollDto) throws FutronicException, IOException {
-		fingerprintServiceImpl.actionEnroll(enrollDto);
-		return "Futronic enrollment initialized successfully!";
+	public ResponseEntity<String> enrollFtr(@RequestBody EnrollDto enrollDto) throws FutronicException, IOException {
+		try {
+			fingerprintServiceImpl.actionEnroll(enrollDto);
+			return ResponseEntity.ok().body("Futronic enrollment initialized successfully!");
+		} catch(Exception e) {
+			e.printStackTrace();
+			return ResponseEntity.badRequest().build();
+		}
 	}
-	
+
 	@GetMapping("/identify")
-	public String identifyFtr() throws FutronicException {
-		fingerprintServiceImpl.actionIdentify();
-		return "Futronic identification initialized successfully!";
+	public ResponseEntity<String> identifyFtr() throws FutronicException {
+		try {
+			fingerprintServiceImpl.actionIdentify();
+			return ResponseEntity.ok().body("Futronic identification initialized successfully!");
+		} catch (Exception e) {
+			e.printStackTrace();
+			return ResponseEntity.badRequest().build();
+		}
+
 	}
 
 	@PostMapping("/verify")
-	public String verifyFtr(@RequestBody String userName) throws FutronicException {
-		fingerprintServiceImpl.actionVerify(userName);
-		return "Futronic verification initialized successfully!";
+	public ResponseEntity<String> verifyFtr(@RequestBody String firstName) throws FutronicException {
+		try {
+			fingerprintServiceImpl.actionVerify(firstName);
+			return ResponseEntity.ok().body("Futronic verification initialized successfully!");
+		} catch (Exception e) {
+			e.printStackTrace();
+			return ResponseEntity.badRequest().build();
+		}
 	}
 
 	@GetMapping("/stop")
@@ -64,7 +78,5 @@ public class FingerprintController extends FutronicSdkBase {
 		fingerprintServiceImpl.actionExit();
 		return "Futronic exited successfully!";
 	}
-
-
 
 }
