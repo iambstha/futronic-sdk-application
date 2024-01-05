@@ -245,13 +245,15 @@ public class FutronicManager implements IEnrollmentCallBack, IIdentificationCall
 	}
 
 	public void actionVerify() {
+
+		DbRecord selectedUser = null;
 		Vector<DbRecord> users = DbRecord.ReadRecords(m_DbDir);
 		if (users.size() == 0) {
-			System.out.println("No users found");
+			System.out.println("Users not found. Please, run enrollment process first.");
 			return;
 		}
 		String userName = customUtilities.GetInputName();
-		DbRecord selectedUser = findUserByName(users, userName);
+		selectedUser = findUserByName(users, userName);
 		if (selectedUser == null) {
 			System.out.println("Selected user is null");
 			return;
@@ -262,19 +264,7 @@ public class FutronicManager implements IEnrollmentCallBack, IIdentificationCall
 
 			m_Operation.setFakeDetection(false);
 			m_Operation.setFFDControl(true);
-			switch (0) {
-			case 0:
-				m_Operation.setVersion(VersionCompatible.ftr_version_previous);
-				break;
-
-			case 1:
-				m_Operation.setVersion(VersionCompatible.ftr_version_current);
-				break;
-
-			default:
-				m_Operation.setVersion(VersionCompatible.ftr_version_compatible);
-				break;
-			}
+			m_Operation.setVersion(VersionCompatible.ftr_version_current);
 			m_Operation.setFastMode(false);
 
 			((FutronicVerification) m_Operation).Verification(this);
