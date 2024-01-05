@@ -84,7 +84,7 @@ public class FingerprintServiceImpl
 			String imagePath = directoryPath + fileName;
 
 			System.out.println("Image Clicked. Saving in progress: ");
-			
+
 			ImageIO.write(Progress, "png", new File(imagePath));
 			System.out.println("Image saved to: " + imagePath);
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -128,9 +128,8 @@ public class FingerprintServiceImpl
 		StringBuffer msg = new StringBuffer();
 		if (bSuccess) {
 			if (bVerificationSuccess) {
-				msg.append(
-						"Verification is successful. Name: " + ((FingerprintEntity) m_OperationObj).getFirst_name()
-								+ " " + ((FingerprintEntity) m_OperationObj).getLast_name());
+				msg.append("Verification is successful. Name: " + ((FingerprintEntity) m_OperationObj).getFirst_name()
+						+ " " + ((FingerprintEntity) m_OperationObj).getLast_name());
 			} else {
 				msg.append("Verification failed.");
 			}
@@ -161,7 +160,6 @@ public class FingerprintServiceImpl
 				if (result.m_Index != -1) {
 					msg.append(
 							users.get(result.m_Index).getFirst_name() + " " + users.get(result.m_Index).getLast_name());
-
 					m_Operation = null;
 					m_OperationObj = null;
 				} else {
@@ -189,7 +187,7 @@ public class FingerprintServiceImpl
 			if (szUserName == null || szUserName.length() == 0) {
 				return;
 			}
-			
+
 			m_OperationObj = new FingerprintEntity();
 			((FingerprintEntity) m_OperationObj).setFirst_name(enrollDto.getFirstName());
 			((FingerprintEntity) m_OperationObj).setLast_name(enrollDto.getLastName());
