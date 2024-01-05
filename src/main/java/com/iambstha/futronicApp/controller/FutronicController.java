@@ -27,16 +27,20 @@ public class FutronicController extends FutronicSdkBase {
 //	FutronicManager enrollmentManager = new FutronicManager();
 
 	@PostMapping(value = "/enroll")
-	public ResponseEntity<byte[]> enrollFtr(@RequestBody String userName) throws FutronicException, IOException {
-		byte[] imageData = futronicManager.actionEnroll(userName);
-
-		// Send the image bytes in the response
-		return ResponseEntity.ok().body(imageData);
+	public String enrollFtr(@RequestBody String userName) throws FutronicException, IOException {
+		futronicManager.actionEnroll(userName);
+		return "Futronic enrollment initialized successfully!";
+	}
+	
+	@GetMapping("/identify")
+	public String identifyFtr() throws FutronicException {
+		futronicManager.actionIdentify();
+		return "Futronic identification initialized successfully!";
 	}
 
-	@GetMapping("/verify")
-	public String verifyFtr() throws FutronicException {
-		futronicManager.actionVerify();
+	@PostMapping("/verify")
+	public String verifyFtr(@RequestBody String userName) throws FutronicException {
+		futronicManager.actionVerify(userName);
 		return "Futronic verification initialized successfully!";
 	}
 
@@ -52,10 +56,6 @@ public class FutronicController extends FutronicSdkBase {
 		return "Futronic exited successfully!";
 	}
 
-	@GetMapping("/identify")
-	public String identifyFtr() throws FutronicException {
-		futronicManager.actionIdentify();
-		return "Futronic identification initialized successfully!";
-	}
+
 
 }

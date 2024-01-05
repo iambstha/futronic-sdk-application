@@ -1,5 +1,7 @@
 package com.iambstha.futronicApp.model;
 
+import java.util.Date;
+
 import com.futronic.SDKHelper.FtrIdentifyRecord;
 
 import jakarta.persistence.Column;
@@ -24,10 +26,11 @@ public class FingerprintEntity {
 	@Column
 	private String m_UserName;
 
-
-
 	@Column
 	private byte[] m_Template;
+	
+    @Column
+    private Date timestamp;
 
 	public FingerprintEntity() {
 		m_UserName = "";
@@ -43,6 +46,7 @@ public class FingerprintEntity {
 			itemLow >>>= 8;
 		}
 		m_Template = null;
+		timestamp = new Date();
 	}
 
 	public FtrIdentifyRecord getFtrIdentifyRecord() {

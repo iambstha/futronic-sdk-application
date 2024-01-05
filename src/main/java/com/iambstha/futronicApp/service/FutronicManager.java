@@ -41,6 +41,7 @@ public class FutronicManager implements IEnrollmentCallBack, IIdentificationCall
 
 	@Autowired
 	private final FingerprintRepository fingerprintRepository;
+	
 
 	private FutronicSdkBase m_Operation;
 	private Object m_OperationObj;
@@ -180,12 +181,12 @@ public class FutronicManager implements IEnrollmentCallBack, IIdentificationCall
 		m_OperationObj = null;
 	}
 
-	public byte[] actionEnroll(String name) {
+	public void actionEnroll(String name) {
 
 		try {
 			String szUserName = name;
 			if (szUserName == null || szUserName.length() == 0) {
-				return null;
+				return;
 			}
 			if (customUtilities.isUserExists(szUserName)) {
 				System.out.println(szUserName + " already exists.");
@@ -210,16 +211,13 @@ public class FutronicManager implements IEnrollmentCallBack, IIdentificationCall
 			m_Operation = null;
 			m_OperationObj = null;
 		}
-		
-		return imageData;
-
 	}
 
-	public void actionIdentify() {
+	public String actionIdentify() {
 		List<FingerprintEntity> users = fingerprintRepository.findAll();
 		if (users.isEmpty()) {
 			System.out.println("No users found.");
-			return;
+			return "No users found";
 		}
 		m_OperationObj = users;
 
@@ -238,10 +236,11 @@ public class FutronicManager implements IEnrollmentCallBack, IIdentificationCall
 			m_Operation = null;
 			m_OperationObj = null;
 		}
+		return m_Operation.toString();
 
 	}
 
-	public void actionVerify() {
+	public void actionVerify(String name) {
 
 		FingerprintEntity selectedUser = null;
 		List<FingerprintEntity> users = fingerprintRepository.findAll();
@@ -249,7 +248,7 @@ public class FutronicManager implements IEnrollmentCallBack, IIdentificationCall
 			System.out.println("Users not found. Please, run enrollment process first.");
 			return;
 		}
-		String userName = customUtilities.GetInputName();
+		String userName = name;
 		selectedUser = findUserByName(users, userName);
 		if (selectedUser == null) {
 			System.out.println("Selected user is null");
@@ -282,7 +281,9 @@ public class FutronicManager implements IEnrollmentCallBack, IIdentificationCall
 	}
 
 	public void actionStop() {
-		m_Operation.OnCalcel();
+		if (m_Operation != null) {
+			m_Operation.OnCalcel();
+		}
 	}
 
 	public void actionExit() {
