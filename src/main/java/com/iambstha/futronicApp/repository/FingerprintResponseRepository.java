@@ -8,7 +8,7 @@ import com.iambstha.futronicApp.model.FingerprintResponse;
 
 import jakarta.transaction.Transactional;
 
-public interface ResponseRepository extends JpaRepository<FingerprintResponse, Long> {
+public interface FingerprintResponseRepository extends JpaRepository<FingerprintResponse, Long> {
 
 	
 	@Transactional
