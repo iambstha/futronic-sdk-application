@@ -1,7 +1,7 @@
 package com.iambstha.futronicApp.service;
 
 import com.iambstha.futronicApp.dto.EnrollDto;
-import com.iambstha.futronicApp.model.FingerprintResponse;
+import com.iambstha.futronicApp.model.FingerprintLogs;
 
 /*
  * FingerprintService.java
@@ -32,6 +32,6 @@ public interface FingerprintService {
 	public void actionExit();
 	
 	// Logging response
-	public FingerprintResponse responseMessage();
+	public FingerprintLogs getFingerprintLogs();
 	
 }

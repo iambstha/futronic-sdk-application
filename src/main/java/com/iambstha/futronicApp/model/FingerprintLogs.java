@@ -1,5 +1,7 @@
 package com.iambstha.futronicApp.model;
 
+import java.util.Date;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -13,7 +15,7 @@ import lombok.Setter;
 @Table(name = "response_entity")
 @Getter
 @Setter
-public class FingerprintResponse {
+public class FingerprintLogs {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,5 +23,12 @@ public class FingerprintResponse {
 	
 	@Column(name = "message")
 	private String message;
+	
+	@Column
+	private Date timestamp;
+	
+	public FingerprintLogs() {
+		timestamp = new Date();
+	}
 	
 }

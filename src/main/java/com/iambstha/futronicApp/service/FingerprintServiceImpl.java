@@ -28,11 +28,12 @@ import com.futronic.SDKHelper.IEnrollmentCallBack;
 import com.futronic.SDKHelper.IIdentificationCallBack;
 import com.futronic.SDKHelper.IVerificationCallBack;
 import com.futronic.SDKHelper.VersionCompatible;
+import com.iambstha.futronicApp.config.MyWebSocketHandler;
 import com.iambstha.futronicApp.dto.EnrollDto;
 import com.iambstha.futronicApp.model.FingerprintEntity;
-import com.iambstha.futronicApp.model.FingerprintResponse;
+import com.iambstha.futronicApp.model.FingerprintLogs;
 import com.iambstha.futronicApp.repository.FingerprintRepository;
-import com.iambstha.futronicApp.repository.FingerprintResponseRepository;
+import com.iambstha.futronicApp.repository.FingerprintLogsRepository;
 
 /**
  * This class acts as the service implementation for the fingerprint controller
@@ -48,14 +49,23 @@ public class FingerprintServiceImpl
 	private final FingerprintRepository fingerprintRepository;
 
 	@Autowired
-	private final FingerprintResponseRepository fingerprintResponseRepository;
+	private final FingerprintLogsRepository fingerprintLogsRepository;
 
+
+	private final MyWebSocketHandler myWebSocketHandler;
+	
 	private FutronicSdkBase m_Operation;
 	private Object m_OperationObj;
 
-	public FingerprintServiceImpl(FingerprintRepository fingerprintRepository, FingerprintResponseRepository fingerprintResponseRepository) {
+	private String responseMessage;
+
+	private String imageFileName;
+	
+	public FingerprintServiceImpl(FingerprintRepository fingerprintRepository,
+			FingerprintLogsRepository fingerprintLogsRepository, MyWebSocketHandler myWebSocketHandler) {
 		this.fingerprintRepository = fingerprintRepository;
-		this.fingerprintResponseRepository = fingerprintResponseRepository;
+		this.fingerprintLogsRepository = fingerprintLogsRepository;
+		this.myWebSocketHandler = myWebSocketHandler;
 		try {
 			FutronicEnrollment enrollment = new FutronicEnrollment();
 			enrollment.setMaxModels(8);
@@ -71,32 +81,44 @@ public class FingerprintServiceImpl
 
 	@Override
 	public void OnPutOn(FTR_PROGRESS Progress) {
-		System.out.println("Please place your finger !!!");
+		responseMessage = "Please place your finger in the device!!!";
+		myWebSocketHandler.sendMessageToAll(responseMessage);
+		System.out.println(responseMessage);
+		fingerprintLogsRepository.logFingerprintMessage(responseMessage);
 	}
 
 	@Override
 	public void OnTakeOff(FTR_PROGRESS Progress) {
-		System.out.println("Please take off your finger..");
+		responseMessage = "Please take off your finger from the device!!!";
+		myWebSocketHandler.sendMessageToAll(responseMessage);
+		System.out.println(responseMessage);
+		fingerprintLogsRepository.logFingerprintMessage(responseMessage);
 	}
 
 	@Override
 	public void UpdateScreenImage(BufferedImage Progress) {
-		System.out.println("Image Clicked!");
-
+		responseMessage = "Image Clicked!";
+		myWebSocketHandler.sendMessageToAll(responseMessage);
+		System.out.println(responseMessage);
+		fingerprintLogsRepository.logFingerprintMessage(responseMessage);
 		try {
-			String directoryPath = "C:\\Users\\iambstha\\OneDrive\\Desktop\\image\\";
+			String directoryPath = "D:\\CODE\\nextjs\\test-api\\public\\fingerprint-images\\";
 			String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-			String fileName = "image_" + timestamp + ".png";
-			String imagePath = directoryPath + fileName;
+			imageFileName = "image_" + timestamp + ".png";
+			String imagePath = directoryPath + imageFileName;
 
-			System.out.println("Image Clicked. Saving in progress: ");
+			responseMessage = "Image Clicked. Saving in progress: ";
+			myWebSocketHandler.sendMessageToAll(responseMessage);
+			System.out.println(responseMessage);
+			fingerprintLogsRepository.logFingerprintMessage(responseMessage);
 
 			ImageIO.write(Progress, "png", new File(imagePath));
-			System.out.println("Image saved to: " + imagePath);
+			responseMessage = "Image saved to: " + imagePath;
+			myWebSocketHandler.sendMessageToAll(responseMessage);
+			fingerprintLogsRepository.logFingerprintMessage(responseMessage);
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			ImageIO.write(Progress, "png", baos);
 			byte[] imageData = baos.toByteArray();
-			System.out.println(imageData);
 
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -105,7 +127,10 @@ public class FingerprintServiceImpl
 
 	@Override
 	public boolean OnFakeSource(FTR_PROGRESS Progress) {
-		System.out.println("Fake Finger Detected");
+		responseMessage = "Fake Finger Detected";
+		myWebSocketHandler.sendMessageToAll(responseMessage);
+		System.out.println(responseMessage);
+		fingerprintLogsRepository.logFingerprintMessage(responseMessage);
 		return false;
 	}
 
@@ -113,17 +138,27 @@ public class FingerprintServiceImpl
 	public void OnEnrollmentComplete(boolean bSuccess, int nResult) {
 
 		if (bSuccess) {
-			System.out.println("Enrollment process finished successfully. Quality: "
-					+ ((FutronicEnrollment) m_Operation).getQuality());
+
+			responseMessage = "Enrollment process finished successfully. Quality: "
+					+ ((FutronicEnrollment) m_Operation).getQuality();
+			myWebSocketHandler.sendMessageToAll(responseMessage);
+			System.out.println(responseMessage);
+			fingerprintLogsRepository.logFingerprintMessage(responseMessage);
 
 			((FingerprintEntity) m_OperationObj).setM_Template(((FutronicEnrollment) m_Operation).getTemplate());
+			((FingerprintEntity) m_OperationObj).setImageFileName(imageFileName);
 
 			fingerprintRepository.save(((FingerprintEntity) m_OperationObj));
-			fingerprintResponseRepository.updateResponseMessage("New user is succesfully enrolled.");
+			responseMessage = "New user is succesfully enrolled.";
+			fingerprintLogsRepository.logFingerprintMessage(responseMessage);
+			myWebSocketHandler.sendMessageToAll(responseMessage);
 
 		} else {
-			System.out.println(
-					"Enrollment process failed. Error description: " + FutronicSdkBase.SdkRetCode2Message(nResult));
+			responseMessage = "Enrollment process failed. Error description: "
+					+ FutronicSdkBase.SdkRetCode2Message(nResult);
+			System.out.println(responseMessage);
+			myWebSocketHandler.sendMessageToAll(responseMessage);
+			fingerprintLogsRepository.logFingerprintMessage(responseMessage);
 		}
 
 		m_Operation = null;
@@ -132,37 +167,37 @@ public class FingerprintServiceImpl
 
 	@Override
 	public void OnVerificationComplete(boolean bSuccess, int nResult, boolean bVerificationSuccess) {
-		StringBuffer msg = new StringBuffer();
 		if (bSuccess) {
 			if (bVerificationSuccess) {
-				msg.append("Verification is successful. Name: " + ((FingerprintEntity) m_OperationObj).getFirst_name()
-						+ " " + ((FingerprintEntity) m_OperationObj).getLast_name());
 
-				fingerprintResponseRepository.updateResponseMessage(
-						"Verification is successful. Name: " + ((FingerprintEntity) m_OperationObj).getFirst_name()
-								+ " " + ((FingerprintEntity) m_OperationObj).getLast_name());
+				responseMessage = "Verification is successful. Name: "
+						+ ((FingerprintEntity) m_OperationObj).getFirst_name() + " "
+						+ ((FingerprintEntity) m_OperationObj).getLast_name();
 			} else {
-				msg.append("Verification failed.");
-				fingerprintResponseRepository.updateResponseMessage("Verification failed.");
+
+				responseMessage = "Verification failed.";
 			}
 		} else {
-			msg.append(
-					"Verification process failed. Error description: " + FutronicSdkBase.SdkRetCode2Message(nResult));
-
-			fingerprintResponseRepository.updateResponseMessage(
-					"Verification process failed. Error description: " + FutronicSdkBase.SdkRetCode2Message(nResult));
+			responseMessage = "Verification process failed. Error description: "
+					+ FutronicSdkBase.SdkRetCode2Message(nResult);
 		}
-		System.out.println(msg.toString());
+
+		System.out.println(responseMessage);
+		myWebSocketHandler.sendMessageToAll(responseMessage);
+		fingerprintLogsRepository.logFingerprintMessage(responseMessage);
+
 		m_Operation = null;
 		m_OperationObj = null;
 	}
 
 	@Override
 	public void OnGetBaseTemplateComplete(boolean bSuccess, int nResult) {
-		StringBuffer msg = new StringBuffer();
 		if (bSuccess) {
-			System.out.println("Starting identification...");
-			fingerprintResponseRepository.updateResponseMessage("Starting identification...");
+			responseMessage = "Starting identification...";
+			System.out.println(responseMessage);
+			myWebSocketHandler.sendMessageToAll(responseMessage);
+			fingerprintLogsRepository.logFingerprintMessage(responseMessage);
+
 			@SuppressWarnings("unchecked")
 			List<FingerprintEntity> users = (List<FingerprintEntity>) m_OperationObj;
 			FtrIdentifyRecord[] rgRecords = users.stream().map(FingerprintEntity::getFtrIdentifyRecord)
@@ -172,40 +207,39 @@ public class FingerprintServiceImpl
 
 			nResult = ((FutronicIdentification) m_Operation).Identification(rgRecords, result);
 			if (nResult == FutronicSdkBase.RETCODE_OK) {
-				msg.append("Identification process complete. Name: ");
+				responseMessage = "Identification process complete. Name: ";
+				myWebSocketHandler.sendMessageToAll(responseMessage);
+				System.out.println(responseMessage);
+				fingerprintLogsRepository.logFingerprintMessage(responseMessage);
 				if (result.m_Index != -1) {
-					msg.append(
-							users.get(result.m_Index).getFirst_name() + " " + users.get(result.m_Index).getLast_name());
+
+					responseMessage = users.get(result.m_Index).getFirst_name() + " "
+							+ users.get(result.m_Index).getLast_name();
+					System.out.println(responseMessage);
+					fingerprintLogsRepository.logFingerprintMessage(responseMessage);
 					m_Operation = null;
 					m_OperationObj = null;
-
-					fingerprintResponseRepository.updateResponseMessage(
-							"Identification process complete. Name: " + users.get(result.m_Index).getFirst_name() + " "
-									+ users.get(result.m_Index).getLast_name());
 				} else {
-					msg.append("not found");
+					responseMessage = "not found";
+					System.out.println(responseMessage);
+					myWebSocketHandler.sendMessageToAll(responseMessage);
+					fingerprintLogsRepository.logFingerprintMessage(responseMessage);
 					actionIdentify();
-
-					fingerprintResponseRepository.updateResponseMessage("Identification process complete. Name: not found");
 				}
 			} else {
-				msg.append("Identification failed.");
-				msg.append(FutronicSdkBase.SdkRetCode2Message(nResult));
-
-				fingerprintResponseRepository
-						.updateResponseMessage("Identification failed." + FutronicSdkBase.SdkRetCode2Message(nResult));
+				responseMessage = "Identification failed." + FutronicSdkBase.SdkRetCode2Message(nResult);
+				System.out.println(responseMessage);
+				myWebSocketHandler.sendMessageToAll(responseMessage);
+				fingerprintLogsRepository.logFingerprintMessage(responseMessage);
 				actionIdentify();
 			}
 
 		} else {
-			msg.append("Can not retrieve base template.");
-			msg.append("Error description: ");
-			msg.append(FutronicSdkBase.SdkRetCode2Message(nResult));
-
-			fingerprintResponseRepository.updateResponseMessage("Can not retrieve base template. Error description: "
-					+ FutronicSdkBase.SdkRetCode2Message(nResult));
+			responseMessage = "Can not retrieve base template. Error description: "
+					+ FutronicSdkBase.SdkRetCode2Message(nResult);
 		}
-		System.out.println(msg.toString());
+		myWebSocketHandler.sendMessageToAll(responseMessage);
+		fingerprintLogsRepository.logFingerprintMessage(responseMessage);
 	}
 
 	public void actionEnroll(EnrollDto enrollDto) {
@@ -231,7 +265,9 @@ public class FingerprintServiceImpl
 
 			((FutronicEnrollment) m_Operation).Enrollment(this);
 
-			fingerprintResponseRepository.updateResponseMessage("Enrollment has started.");
+			responseMessage = "Enrollment has started.";
+			myWebSocketHandler.sendMessageToAll(responseMessage);
+			fingerprintLogsRepository.logFingerprintMessage(responseMessage);
 		} catch (Exception e) {
 			e.printStackTrace();
 			m_Operation = null;
@@ -242,9 +278,10 @@ public class FingerprintServiceImpl
 	public String actionIdentify() {
 		List<FingerprintEntity> users = fingerprintRepository.findAll();
 		if (users.isEmpty()) {
-
-			fingerprintResponseRepository.updateResponseMessage("No users found");
-			System.out.println("No users found.");
+			responseMessage = "No users found";
+			System.out.println(responseMessage);
+			myWebSocketHandler.sendMessageToAll(responseMessage);
+			fingerprintLogsRepository.logFingerprintMessage(responseMessage);
 			return "No users found";
 		}
 		m_OperationObj = users;
@@ -260,7 +297,10 @@ public class FingerprintServiceImpl
 
 			((FutronicIdentification) m_Operation).GetBaseTemplate(this);
 
-			fingerprintResponseRepository.updateResponseMessage("Identification has started.");
+			responseMessage = "Identification has started.";
+			myWebSocketHandler.sendMessageToAll(responseMessage);
+			System.out.println(responseMessage);
+			fingerprintLogsRepository.logFingerprintMessage(responseMessage);
 		} catch (FutronicException e) {
 			e.printStackTrace();
 			m_Operation = null;
@@ -275,16 +315,19 @@ public class FingerprintServiceImpl
 		FingerprintEntity selectedUser = null;
 		List<FingerprintEntity> users = fingerprintRepository.findAll();
 		if (users.isEmpty()) {
-
-			fingerprintResponseRepository.updateResponseMessage("Users not found. Please, run enrollment process first.");
-			System.out.println("Users not found. Please, run enrollment process first.");
+			responseMessage = "Users not found. Please, run enrollment process first.";
+			myWebSocketHandler.sendMessageToAll(responseMessage);
+			System.out.println(responseMessage);
+			fingerprintLogsRepository.logFingerprintMessage(responseMessage);
 			return;
 		}
 		String firstName = enrollDto.getFirstName();
 		selectedUser = findUserByFirstName(users, firstName);
 		if (selectedUser == null) {
-			fingerprintResponseRepository.updateResponseMessage("Selected user is not found");
-			System.out.println("Selected user is not found");
+			responseMessage = "Selected user is not found in the database";
+			myWebSocketHandler.sendMessageToAll(responseMessage);
+			System.out.println(responseMessage);
+			fingerprintLogsRepository.logFingerprintMessage(responseMessage);
 			return;
 		}
 		m_OperationObj = selectedUser;
@@ -298,8 +341,16 @@ public class FingerprintServiceImpl
 
 			((FutronicVerification) m_Operation).Verification(this);
 
-			fingerprintResponseRepository.updateResponseMessage("Verification has started");
+			responseMessage = "Verification has started";
+			myWebSocketHandler.sendMessageToAll(responseMessage);
+			System.out.println(responseMessage);
+			fingerprintLogsRepository.logFingerprintMessage(responseMessage);
 		} catch (FutronicException e) {
+			responseMessage = "Error";
+			myWebSocketHandler.sendMessageToAll(responseMessage);
+			System.out.println(responseMessage);
+			fingerprintLogsRepository.logFingerprintMessage(responseMessage);
+			
 			e.printStackTrace();
 			m_Operation = null;
 			m_OperationObj = null;
@@ -309,12 +360,20 @@ public class FingerprintServiceImpl
 	public void actionStop() {
 		if (m_Operation != null) {
 			m_Operation.OnCalcel();
+			responseMessage = "Operation stopped!!!";
+			myWebSocketHandler.sendMessageToAll(responseMessage);
+			System.out.println(responseMessage);
+			fingerprintLogsRepository.logFingerprintMessage(responseMessage);
 		}
 	}
 
 	public void actionExit() {
 		if (m_Operation != null) {
 			m_Operation.Dispose();
+			responseMessage = "Operation exited!!!";
+			myWebSocketHandler.sendMessageToAll(responseMessage);
+			System.out.println(responseMessage);
+			fingerprintLogsRepository.logFingerprintMessage(responseMessage);
 		}
 		System.exit(0);
 	}
@@ -329,9 +388,8 @@ public class FingerprintServiceImpl
 	}
 
 	@Override
-	public FingerprintResponse responseMessage() {
-		FingerprintResponse msg = fingerprintResponseRepository.getResponseMessage();
-		return msg;
+	public FingerprintLogs getFingerprintLogs() {
+		return fingerprintLogsRepository.getFingerprintLogs();
 	}
 
 }

@@ -2,14 +2,14 @@ package com.iambstha.futronicApp.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.iambstha.futronicApp.config.MyWebSocketHandler;
 import com.iambstha.futronicApp.dto.EnrollDto;
-import com.iambstha.futronicApp.model.FingerprintResponse;
+import com.iambstha.futronicApp.model.FingerprintLogs;
 import com.iambstha.futronicApp.service.FingerprintServiceImpl;
 
 /**
@@ -20,21 +20,20 @@ import com.iambstha.futronicApp.service.FingerprintServiceImpl;
 @RestController
 public class FingerprintController {
 
-	@Autowired
 	private final FingerprintServiceImpl fingerprintServiceImpl;
-	private final SimpMessagingTemplate messagingTemplate;
+	private final MyWebSocketHandler myWebSocketHandler;
 
-	public FingerprintController(FingerprintServiceImpl fingerprintServiceImpl,
-			SimpMessagingTemplate messagingTemplate) {
+	@Autowired
+	public FingerprintController(FingerprintServiceImpl fingerprintServiceImpl, MyWebSocketHandler myWebSocketHandler) {
 		this.fingerprintServiceImpl = fingerprintServiceImpl;
-		this.messagingTemplate = messagingTemplate;
+		this.myWebSocketHandler = myWebSocketHandler;
 	}
 
 	@PostMapping(value = "/enroll", consumes = "application/json")
 	public ResponseEntity<String> enrollFtr(@RequestBody EnrollDto enrollDto) {
 		try {
 			fingerprintServiceImpl.actionEnroll(enrollDto);
-			sendMessage("Futronic enrollment initialized successfully!");
+			myWebSocketHandler.sendMessageToAll("Futronic enrollment initialized successfully!");
 			return ResponseEntity.ok().body("Futronic enrollment initialized successfully!");
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -46,7 +45,7 @@ public class FingerprintController {
 	public ResponseEntity<String> identifyFtr() {
 		try {
 			fingerprintServiceImpl.actionIdentify();
-			sendMessage("Futronic identification initialized successfully!");
+			myWebSocketHandler.sendMessageToAll("Futronic identification initialized successfully!");
 			return ResponseEntity.ok().body("Futronic identification initialized successfully!");
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -58,7 +57,7 @@ public class FingerprintController {
 	public ResponseEntity<String> verifyFtr(@RequestBody EnrollDto enrollDto) {
 		try {
 			fingerprintServiceImpl.actionVerify(enrollDto);
-			sendMessage("Futronic verification initialized successfully!");
+			myWebSocketHandler.sendMessageToAll("Futronic verification initialized successfully!");
 			return ResponseEntity.ok().body("Futronic verification initialized successfully!");
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -69,23 +68,19 @@ public class FingerprintController {
 	@GetMapping("/stop")
 	public String stopFtr() {
 		fingerprintServiceImpl.actionStop();
-		sendMessage("Futronic stopped successfully!");
+		myWebSocketHandler.sendMessageToAll("Futronic stopped successfully!");
 		return "Futronic stopped successfully!";
 	}
 
 	@GetMapping("/exit")
 	public String exitFtr() {
 		fingerprintServiceImpl.actionExit();
-		sendMessage("Futronic exited successfully!");
+		myWebSocketHandler.sendMessageToAll("Futronic exited successfully!");
 		return "Futronic exited successfully!";
 	}
 
 	@GetMapping(value = "/message", produces = "application/json")
-	public ResponseEntity<FingerprintResponse> responseMessage() {
-		return ResponseEntity.ok().body(fingerprintServiceImpl.responseMessage());
-	}
-
-	private void sendMessage(String message) {
-		messagingTemplate.convertAndSend("/topic/messages", message);
+	public ResponseEntity<FingerprintLogs> logFingerprintMessage() {
+		return ResponseEntity.ok().body(fingerprintServiceImpl.getFingerprintLogs());
 	}
 }

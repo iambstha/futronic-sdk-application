@@ -50,6 +50,9 @@ public class FingerprintEntity {
 	@Column
 	private byte[] m_Template;
 	
+	@Column
+	private String imageFileName;
+	
     @Column
     private Date timestamp;
 
