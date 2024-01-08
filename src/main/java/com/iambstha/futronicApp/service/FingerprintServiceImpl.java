@@ -30,7 +30,9 @@ import com.futronic.SDKHelper.IVerificationCallBack;
 import com.futronic.SDKHelper.VersionCompatible;
 import com.iambstha.futronicApp.dto.EnrollDto;
 import com.iambstha.futronicApp.model.FingerprintEntity;
+import com.iambstha.futronicApp.model.FingerprintResponse;
 import com.iambstha.futronicApp.repository.FingerprintRepository;
+import com.iambstha.futronicApp.repository.ResponseRepository;
 
 /**
  * This class acts as the service implementation for the fingerprint controller
@@ -45,11 +47,17 @@ public class FingerprintServiceImpl
 	@Autowired
 	private final FingerprintRepository fingerprintRepository;
 
+	@Autowired
+	private final ResponseRepository responseRepository;
+
 	private FutronicSdkBase m_Operation;
 	private Object m_OperationObj;
+	private FingerprintResponse m_Response;
 
-	public FingerprintServiceImpl(FingerprintRepository fingerprintRepository) {
+	public FingerprintServiceImpl(FingerprintRepository fingerprintRepository, ResponseRepository responseRepository) {
 		this.fingerprintRepository = fingerprintRepository;
+		this.responseRepository = responseRepository;
+		m_Response = new FingerprintResponse();
 		try {
 			FutronicEnrollment enrollment = new FutronicEnrollment();
 			enrollment.setMaxModels(8);
@@ -113,6 +121,7 @@ public class FingerprintServiceImpl
 			((FingerprintEntity) m_OperationObj).setM_Template(((FutronicEnrollment) m_Operation).getTemplate());
 
 			fingerprintRepository.save(((FingerprintEntity) m_OperationObj));
+			responseRepository.updateResponseMessage("New user is succesfully enrolled.");
 
 		} else {
 			System.out.println(
@@ -121,6 +130,7 @@ public class FingerprintServiceImpl
 
 		m_Operation = null;
 		m_OperationObj = null;
+		m_Response = null;
 	}
 
 	@Override
@@ -130,16 +140,25 @@ public class FingerprintServiceImpl
 			if (bVerificationSuccess) {
 				msg.append("Verification is successful. Name: " + ((FingerprintEntity) m_OperationObj).getFirst_name()
 						+ " " + ((FingerprintEntity) m_OperationObj).getLast_name());
+
+				responseRepository.updateResponseMessage(
+						"Verification is successful. Name: " + ((FingerprintEntity) m_OperationObj).getFirst_name()
+								+ " " + ((FingerprintEntity) m_OperationObj).getLast_name());
 			} else {
 				msg.append("Verification failed.");
+				responseRepository.updateResponseMessage("Verification failed.");
 			}
 		} else {
 			msg.append(
+					"Verification process failed. Error description: " + FutronicSdkBase.SdkRetCode2Message(nResult));
+
+			responseRepository.updateResponseMessage(
 					"Verification process failed. Error description: " + FutronicSdkBase.SdkRetCode2Message(nResult));
 		}
 		System.out.println(msg.toString());
 		m_Operation = null;
 		m_OperationObj = null;
+		m_Response = null;
 	}
 
 	@Override
@@ -147,6 +166,7 @@ public class FingerprintServiceImpl
 		StringBuffer msg = new StringBuffer();
 		if (bSuccess) {
 			System.out.println("Starting identification...");
+			responseRepository.updateResponseMessage("Starting identification...");
 			@SuppressWarnings("unchecked")
 			List<FingerprintEntity> users = (List<FingerprintEntity>) m_OperationObj;
 			FtrIdentifyRecord[] rgRecords = users.stream().map(FingerprintEntity::getFtrIdentifyRecord)
@@ -162,13 +182,23 @@ public class FingerprintServiceImpl
 							users.get(result.m_Index).getFirst_name() + " " + users.get(result.m_Index).getLast_name());
 					m_Operation = null;
 					m_OperationObj = null;
+					m_Response = null;
+
+					responseRepository.updateResponseMessage(
+							"Identification process complete. Name: " + users.get(result.m_Index).getFirst_name() + " "
+									+ users.get(result.m_Index).getLast_name());
 				} else {
 					msg.append("not found");
 					actionIdentify();
+
+					responseRepository.updateResponseMessage("Identification process complete. Name: not found");
 				}
 			} else {
 				msg.append("Identification failed.");
 				msg.append(FutronicSdkBase.SdkRetCode2Message(nResult));
+
+				responseRepository
+						.updateResponseMessage("Identification failed." + FutronicSdkBase.SdkRetCode2Message(nResult));
 				actionIdentify();
 			}
 
@@ -176,6 +206,9 @@ public class FingerprintServiceImpl
 			msg.append("Can not retrieve base template.");
 			msg.append("Error description: ");
 			msg.append(FutronicSdkBase.SdkRetCode2Message(nResult));
+
+			responseRepository.updateResponseMessage("Can not retrieve base template. Error description: "
+					+ FutronicSdkBase.SdkRetCode2Message(nResult));
 		}
 		System.out.println(msg.toString());
 	}
@@ -202,16 +235,21 @@ public class FingerprintServiceImpl
 			m_Operation.setVersion(VersionCompatible.ftr_version_current);
 
 			((FutronicEnrollment) m_Operation).Enrollment(this);
+
+			responseRepository.updateResponseMessage("Enrollment has started.");
 		} catch (Exception e) {
 			e.printStackTrace();
 			m_Operation = null;
 			m_OperationObj = null;
+			m_Response = null;
 		}
 	}
 
 	public String actionIdentify() {
 		List<FingerprintEntity> users = fingerprintRepository.findAll();
 		if (users.isEmpty()) {
+
+			responseRepository.updateResponseMessage("No users found");
 			System.out.println("No users found.");
 			return "No users found";
 		}
@@ -227,27 +265,33 @@ public class FingerprintServiceImpl
 			m_Operation.setFastMode(false);
 
 			((FutronicIdentification) m_Operation).GetBaseTemplate(this);
+
+			responseRepository.updateResponseMessage("Identification has started.");
 		} catch (FutronicException e) {
 			e.printStackTrace();
 			m_Operation = null;
 			m_OperationObj = null;
+			m_Response = null;
 		}
 		return m_Operation.toString();
 
 	}
 
-	public void actionVerify(String name) {
+	public void actionVerify(EnrollDto enrollDto) {
 
 		FingerprintEntity selectedUser = null;
 		List<FingerprintEntity> users = fingerprintRepository.findAll();
 		if (users.isEmpty()) {
+
+			responseRepository.updateResponseMessage("Users not found. Please, run enrollment process first.");
 			System.out.println("Users not found. Please, run enrollment process first.");
 			return;
 		}
-		String firstName = name;
+		String firstName = enrollDto.getFirstName();
 		selectedUser = findUserByFirstName(users, firstName);
 		if (selectedUser == null) {
-			System.out.println("Selected user is null");
+			responseRepository.updateResponseMessage("Selected user is not found");
+			System.out.println("Selected user is not found");
 			return;
 		}
 		m_OperationObj = selectedUser;
@@ -260,10 +304,13 @@ public class FingerprintServiceImpl
 			m_Operation.setFastMode(true);
 
 			((FutronicVerification) m_Operation).Verification(this);
+
+			responseRepository.updateResponseMessage("Verification has started");
 		} catch (FutronicException e) {
 			e.printStackTrace();
 			m_Operation = null;
 			m_OperationObj = null;
+			m_Response = null;
 		}
 	}
 
@@ -287,6 +334,12 @@ public class FingerprintServiceImpl
 			}
 		}
 		return null;
+	}
+
+	@Override
+	public FingerprintResponse responseMessage() {
+		FingerprintResponse msg = responseRepository.getResponseMessage();
+		return msg;
 	}
 
 }

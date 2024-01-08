@@ -4,6 +4,5 @@ public enum IndividualType {
 	employer,
 	employee,
 	customer,
-	client,
-	investor
+	client
 }

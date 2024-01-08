@@ -1,6 +1,7 @@
 package com.iambstha.futronicApp.service;
 
 import com.iambstha.futronicApp.dto.EnrollDto;
+import com.iambstha.futronicApp.model.FingerprintResponse;
 
 /*
  * FingerprintService.java
@@ -22,12 +23,15 @@ public interface FingerprintService {
 	public String actionIdentify();
 	
 	// Verifying a particular fingerprint
-	public void actionVerify(String name);
+	public void actionVerify(EnrollDto enrollDto);
 	
 	// Stopping the current fingerprint operation
 	public void actionStop();
 	
 	// Exiting the application
 	public void actionExit();
+	
+	// Logging response
+	public FingerprintResponse responseMessage();
 	
 }

@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.futronic.SDKHelper.FutronicException;
 import com.futronic.SDKHelper.FutronicSdkBase;
 import com.iambstha.futronicApp.dto.EnrollDto;
+import com.iambstha.futronicApp.model.FingerprintResponse;
 import com.iambstha.futronicApp.service.FingerprintServiceImpl;
 
 /**
@@ -56,10 +57,10 @@ public class FingerprintController extends FutronicSdkBase {
 
 	}
 
-	@PostMapping("/verify")
-	public ResponseEntity<String> verifyFtr(@RequestBody String firstName) throws FutronicException {
+	@PostMapping(value = "/verify", consumes = "application/json")
+	public ResponseEntity<String> verifyFtr(@RequestBody EnrollDto enrollDto) throws FutronicException {
 		try {
-			fingerprintServiceImpl.actionVerify(firstName);
+			fingerprintServiceImpl.actionVerify(enrollDto);
 			return ResponseEntity.ok().body("Futronic verification initialized successfully!");
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -77,6 +78,12 @@ public class FingerprintController extends FutronicSdkBase {
 	public String exitFtr() throws FutronicException {
 		fingerprintServiceImpl.actionExit();
 		return "Futronic exited successfully!";
+	}
+	
+	@GetMapping(value = "/message", produces = "application/json")
+	public ResponseEntity<FingerprintResponse> responseMessage() {
+		FingerprintResponse m = fingerprintServiceImpl.responseMessage();
+		return ResponseEntity.ok().body(m);
 	}
 
 }

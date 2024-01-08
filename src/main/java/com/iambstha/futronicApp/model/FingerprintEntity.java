@@ -57,7 +57,6 @@ public class FingerprintEntity {
 		first_name = "";
 		last_name ="";
 		individual_type = IndividualType.employee;
-		// Generate user's unique identifier
 		m_Key = new byte[16];
 		java.util.UUID guid = java.util.UUID.randomUUID();
 		long itemHigh = guid.getMostSignificantBits();
