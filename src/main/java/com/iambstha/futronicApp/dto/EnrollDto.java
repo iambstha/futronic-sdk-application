@@ -9,6 +9,7 @@ import lombok.Setter;
 @Setter
 public class EnrollDto {
 
+	private Long id;
 	private String firstName;
 	private String lastName;
 	private IndividualType individualType ;

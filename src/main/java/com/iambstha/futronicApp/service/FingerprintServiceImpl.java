@@ -208,19 +208,17 @@ public class FingerprintServiceImpl
 			nResult = ((FutronicIdentification) m_Operation).Identification(rgRecords, result);
 			if (nResult == FutronicSdkBase.RETCODE_OK) {
 				responseMessage = "Identification process complete. Name: ";
-				myWebSocketHandler.sendMessageToAll(responseMessage);
-				System.out.println(responseMessage);
-				fingerprintLogsRepository.logFingerprintMessage(responseMessage);
 				if (result.m_Index != -1) {
 
-					responseMessage = users.get(result.m_Index).getFirst_name() + " "
+					responseMessage += users.get(result.m_Index).getFirst_name() + " "
 							+ users.get(result.m_Index).getLast_name();
 					System.out.println(responseMessage);
+					myWebSocketHandler.sendMessageToAll(responseMessage);
 					fingerprintLogsRepository.logFingerprintMessage(responseMessage);
 					m_Operation = null;
 					m_OperationObj = null;
 				} else {
-					responseMessage = "not found";
+					responseMessage += "not found";
 					System.out.println(responseMessage);
 					myWebSocketHandler.sendMessageToAll(responseMessage);
 					fingerprintLogsRepository.logFingerprintMessage(responseMessage);
@@ -237,16 +235,20 @@ public class FingerprintServiceImpl
 		} else {
 			responseMessage = "Can not retrieve base template. Error description: "
 					+ FutronicSdkBase.SdkRetCode2Message(nResult);
+			myWebSocketHandler.sendMessageToAll(responseMessage);
 		}
-		myWebSocketHandler.sendMessageToAll(responseMessage);
 		fingerprintLogsRepository.logFingerprintMessage(responseMessage);
 	}
 
 	public void actionEnroll(EnrollDto enrollDto) {
 
 		try {
-			String szUserName = enrollDto.getFirstName() + " " + enrollDto.getLastName();
-			if (szUserName == null || szUserName.length() == 0) {
+			String userName = enrollDto.getFirstName() + " " + enrollDto.getLastName();
+			System.out.println(userName.length());
+			if (userName == null || userName.length() == 1) {
+
+				responseMessage = "Please enter user informations.";
+				myWebSocketHandler.sendMessageToAll(responseMessage);
 				return;
 			}
 
@@ -322,7 +324,10 @@ public class FingerprintServiceImpl
 			return;
 		}
 		String firstName = enrollDto.getFirstName();
-		selectedUser = findUserByFirstName(users, firstName);
+		Long id = enrollDto.getId();
+//		selectedUser = findUserByFirstName(users, firstName);
+//		selectedUser = findUserById(users, id);
+		selectedUser = findUserByIdAndFirstName(users, id, firstName);
 		if (selectedUser == null) {
 			responseMessage = "Selected user is not found in the database";
 			myWebSocketHandler.sendMessageToAll(responseMessage);
@@ -381,6 +386,24 @@ public class FingerprintServiceImpl
 	private FingerprintEntity findUserByFirstName(List<FingerprintEntity> users, String firstName) {
 		for (FingerprintEntity user : users) {
 			if (user.getFirst_name().equals(firstName)) {
+				return user;
+			}
+		}
+		return null;
+	}
+	
+	private FingerprintEntity findUserById(List<FingerprintEntity> users, Long id) {
+		for (FingerprintEntity user : users) {
+			if (user.getId().equals(id)) {
+				return user;
+			}
+		}
+		return null;
+	}
+	
+	private FingerprintEntity findUserByIdAndFirstName(List<FingerprintEntity> users, Long id, String firstName) {
+		for (FingerprintEntity user : users) {
+			if (user.getId().equals(id) & user.getFirst_name().equals(firstName)) {
 				return user;
 			}
 		}
